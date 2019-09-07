@@ -34,6 +34,7 @@ import { _t } from '../../languageHandler';
 import {RoomPermalinkCreator} from '../../utils/permalinks/Permalinks';
 
 import MatrixClientPeg from '../../MatrixClientPeg';
+import PlatformPeg from "../../PlatformPeg";
 import ContentMessages from '../../ContentMessages';
 import Modal from '../../Modal';
 import sdk from '../../index';
@@ -1141,11 +1142,39 @@ module.exports = createReactClass({
 
         debuglog("sending search request");
 
-        const searchPromise = MatrixClientPeg.get().searchRoomEvents({
-            filter: filter,
-            term: term,
-        });
-        this._handleSearchResult(searchPromise).done();
+        if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
+            var search_func = async function(search_term) {
+                const platform = PlatformPeg.get();
+                const eventMapper = MatrixClientPeg.get().getEventMapper();
+
+                let result = await platform.searchEventIndex(search_term);
+
+                let response = {
+                    search_categories: {
+                        room_events: result
+
+                    }
+                };
+
+                let empty_results = {
+                    results: [],
+                    highlights: []
+                };
+
+                let search_result = MatrixClientPeg.get()._processRoomEventsSearch(empty_results, response)
+                return search_result;
+            };
+
+            const searchPromise = search_func(term)
+
+            this._handleSearchResult(searchPromise).done();
+        } else {
+            const searchPromise = MatrixClientPeg.get().searchRoomEvents({
+                filter: filter,
+                term: term,
+            });
+            this._handleSearchResult(searchPromise).done();
+        }
     },
 
     _handleSearchResult: function(searchPromise) {

@@ -1369,6 +1369,36 @@ export default createReactClass({
             }, null, true);
         });
 
+        // cli.on("Room.timeline", function(ev, room, toStartOfTimeline) {
+        //     if (toStartOfTimeline) {
+        //         return;
+        //       }
+
+        //     let platform = PlatformPeg.get();
+
+        //     if (ev.getType() == "m.room.message") {
+        //         if (ev._clearEvent.type) {
+        //             ev = ev._clearEvent
+        //         } else {
+        //             ev = ev.event
+        //         }
+
+        //         platform.addEventToIndex(ev.event)
+        //     }
+        // });
+
+        cli.on("Event.decrypted", function(e, err) {
+            // if (err) {
+            //     console.log("Not indexing event that failed to decrypt");
+            //     return;
+            // }
+            let platform = PlatformPeg.get();
+            let ev = e.event;
+            ev.type = e.getType();
+            ev.content = e.getContent();
+            platform.addEventToIndex(ev)
+        });
+
         cli.on("accountData", function(ev) {
             if (ev.getType() === 'im.vector.web.settings') {
                 if (ev.getContent() && ev.getContent().theme) {

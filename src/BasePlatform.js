@@ -30,6 +30,7 @@ export default class BasePlatform {
     constructor() {
         this.notificationCount = 0;
         this.errorDidOccur = false;
+        this.eventIndex = undefined
 
         dis.register(this._onAction.bind(this));
     }
@@ -150,5 +151,16 @@ export default class BasePlatform {
 
     async setMinimizeToTrayEnabled(enabled: boolean): void {
         throw new Error("Unimplemented");
+    }
+
+    initEventIndex(user_id): void {
+        throw new Error("Unimplemented");
+    }
+
+    addEventToIndex(ev): void {
+        throw new Error("Unimplemented");
+    }
+
+    searchEventIndex(term: string): Promise<{}> {
     }
 }

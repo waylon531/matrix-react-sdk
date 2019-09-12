@@ -30,7 +30,7 @@ export default class BasePlatform {
     constructor() {
         this.notificationCount = 0;
         this.errorDidOccur = false;
-        this.eventIndex = undefined
+        this.eventIndex = undefined;
 
         dis.register(this._onAction.bind(this));
     }
@@ -153,14 +153,15 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
-    initEventIndex(user_id): void {
+    async initEventIndex(userId: string): void {
         throw new Error("Unimplemented");
     }
 
-    addEventToIndex(ev): void {
+    async addEventToIndex(ev: {}): void {
         throw new Error("Unimplemented");
     }
 
-    searchEventIndex(term: string): Promise<{}> {
+    async searchEventIndex(term: string): Promise<{}> {
+        throw new Error("Unimplemented");
     }
 }

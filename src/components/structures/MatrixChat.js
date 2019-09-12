@@ -1369,34 +1369,20 @@ export default createReactClass({
             }, null, true);
         });
 
-        // cli.on("Room.timeline", function(ev, room, toStartOfTimeline) {
-        //     if (toStartOfTimeline) {
-        //         return;
-        //       }
+        cli.on("Room.timeline", function(ev, room, toStartOfTimeline, removed, data) {
+            // We only add new non-redacted events to the store here.
+            // TODO add m.room.topic and m.room.name events as well.
+            if (
+              toStartOfTimeline || !data || !data.liveEvent || ev.isRedacted() || ev.getType() !== "m.room.message"
+            ) return;
 
-        //     let platform = PlatformPeg.get();
+            const platform = PlatformPeg.get();
+            const e = ev.event;
 
-        //     if (ev.getType() == "m.room.message") {
-        //         if (ev._clearEvent.type) {
-        //             ev = ev._clearEvent
-        //         } else {
-        //             ev = ev.event
-        //         }
+            e.type = ev.getType();
+            e.content = ev.getContent();
 
-        //         platform.addEventToIndex(ev.event)
-        //     }
-        // });
-
-        cli.on("Event.decrypted", function(e, err) {
-            // if (err) {
-            //     console.log("Not indexing event that failed to decrypt");
-            //     return;
-            // }
-            let platform = PlatformPeg.get();
-            let ev = e.event;
-            ev.type = e.getType();
-            ev.content = e.getContent();
-            platform.addEventToIndex(ev)
+            platform.addEventToIndex(e);
         });
 
         cli.on("accountData", function(ev) {

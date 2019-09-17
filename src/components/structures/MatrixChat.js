@@ -1288,6 +1288,54 @@ export default createReactClass({
             return self._loggedInView.child.canResetTimelineInRoom(roomId);
         });
 
+        cli.on('sync', async function(state, prevState, data) {
+            if (!(state === "SYNCING" && prevState === "PREPARED")) {
+                return;
+            }
+
+            const platform = PlatformPeg.get();
+
+            if (!data.oldSyncToken) {
+                const client = MatrixClientPeg.get();
+                const rooms = client.getRooms();
+
+                const isRoomEncrypted = (room) => {
+                    return client.isRoomEncrypted(room.roomId);
+                }
+
+                // We only care to crawl the encrypted rooms, non-encrytped
+                // rooms can use the search provided by the Homeserver.
+                const encryptedRooms = rooms.filter(isRoomEncrypted);
+
+                console.log("Seshat: Initial sync, getting checkpoints for the indexer");
+
+                // This is an initial sync, we gather the prev_batch tokens and
+                // create checkpoints for our message crawler.
+                encryptedRooms.forEach(room => {
+                    const timeline = room.getLiveTimeline();
+                    const token = timeline.getPaginationToken("b");
+
+                    console.log("Seshat: Got token for indexer", room.roomId, token);
+
+                    const checkpoint = {
+                        room_id: room.roomId,
+                        token: token
+                    };
+
+                    platform.addBacklogCheckpoint(checkpoint);
+                    self.backlogChekpoints.push(checkpoint);
+                });
+            } else {
+                // Load the previously stored checkpoints so our crawler can
+                // continue if there are any.
+                self.backlogChekpoints = await platform.loadCheckpoints();
+                console.log("Seshat: Loaded our checkpoints", self.backlogChekpoints);
+            }
+
+            // Start our crawler.
+            self.crawlerRef = self.crawlerFunc();
+        });
+
         cli.on('sync', function(state, prevState, data) {
             // LifecycleStore and others cannot directly subscribe to matrix client for
             // events because flux only allows store state changes during flux dispatches.

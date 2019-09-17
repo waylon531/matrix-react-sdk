@@ -1262,6 +1262,7 @@ export default createReactClass({
         // to do the first sync
         this.firstSyncComplete = false;
         this.firstSyncPromise = Promise.defer();
+        this.backlogChekpoints = [];
         const cli = MatrixClientPeg.get();
         const IncomingSasDialog = sdk.getComponent('views.dialogs.IncomingSasDialog');
 
@@ -1945,5 +1946,116 @@ export default createReactClass({
         return <ErrorBoundary>
             {view}
         </ErrorBoundary>;
+    },
+
+    async crawlerFunc() {
+        // TODO either put this in a better place or find a library provided
+        // method that does this.
+        const sleep = async (ms) => {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        console.log("Seshat: Started crawler function");
+
+        const client = MatrixClientPeg.get();
+        const platform = PlatformPeg.get();
+
+        while (true) {
+            // This is a low priority task and we don't want to spam our
+            // Homeserver with /messages requests so we set a hefty 3s timeout
+            // here.
+            await sleep(3000);
+
+            const checkpoint = this.backlogChekpoints.shift();
+
+            console.log("Seshat: using checkpoint", checkpoint);
+
+            /// There is no checkpoint available currently, one may appear if
+            // a sync with limited room timelines happens, so go back to sleep.
+            if (checkpoint ===  undefined) {
+                continue
+            }
+
+            // We have a checkpoint, let us fetch some messages, again very
+            // conservatively to not bother our Homeserver too much.
+            const eventMapper = client.getEventMapper();
+            const res = await client._createMessagesRequest(checkpoint.room_id, checkpoint.token, 10, "b");
+
+            if (res.chunk.length === 0) {
+                // We got to the start of our timeline, lets just
+                // delete our checkpoint and go back to sleep.
+                await platform.removeBacklogCheckpoint(checkpoint);
+                continue
+            }
+
+            // Convert the plain JSON events into Matrix events so they get
+            // decrypted if necessary.
+            const matrixEvents = res.chunk.map(eventMapper);
+
+            let decryptionPromises = []
+
+            matrixEvents.forEach(ev => {
+                if (ev.isBeingDecrypted() || ev.isDecryptionFailure()) {
+                    // TODO the decryption promise is a private property, this
+                    // should either be made public or we should convert the
+                    // event that gets fired when decryption is done into a
+                    // promise using the once event emitter method:
+                    // https://nodejs.org/api/events.html#events_events_once_emitter_name
+                    decryptionPromises.push(ev._decryptionPromise);
+                }
+            });
+
+            // Let us wait for all the events to get decrypted.
+            await Promise.all(decryptionPromises);
+
+            // We filter out events for which decryption failed, are redacted
+            // or aren't of a type that we know how to index.
+            const isValidEvent = (value) => {
+                return (value.getType() === "m.room.message" && !value.isRedacted() && !value.isDecryptionFailure());
+            };
+            let filteredEvents = matrixEvents.filter(isValidEvent);
+
+            // TODO this should be moved into the platform specific parts
+            // Let us convert the events back into a format that Seshat can
+            // consume.
+            let events = filteredEvents.map((ev) => {
+                const e = ev.event;
+                e.type = ev.getType();
+                e.content = ev.getContent();
+
+                // TODO we should fetch the profile of the sender here instead
+                // of putting an empty one here.
+                let object = {
+                    event: e,
+                    profile: {}
+                }
+                return object;
+            });
+
+            // Create a new checkpoint so we can continue crawling the room for
+            // messages.
+            let newCheckpoint = {
+                room_id: checkpoint.room_id,
+                token: res.end
+            }
+
+            console.log(
+                "Seshat: Crawled for events in room",
+                client.getRoom(checkpoint.room_id).name,
+                events
+            );
+
+            try {
+                // TODO figure out if can stop at this checkpoint
+                // instead of reindexing the whole room every time.
+                await platform.addBacklogEvents(events, newCheckpoint, checkpoint);
+                this.backlogChekpoints.push(newCheckpoint);
+            } catch (e) {
+                console.log(e)
+                // An error occured, put the checkpoint back so we
+                // can retry.
+                this.backlogChekpoints.push(checkpoint);
+            }
+        }
     },
 });

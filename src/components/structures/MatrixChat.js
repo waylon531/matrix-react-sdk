@@ -1301,7 +1301,7 @@ export default createReactClass({
 
                 const isRoomEncrypted = (room) => {
                     return client.isRoomEncrypted(room.roomId);
-                }
+                };
 
                 // We only care to crawl the encrypted rooms, non-encrytped
                 // rooms can use the search provided by the Homeserver.
@@ -1319,7 +1319,7 @@ export default createReactClass({
 
                     const checkpoint = {
                         room_id: room.roomId,
-                        token: token
+                        token: token,
                     };
 
                     platform.addBacklogCheckpoint(checkpoint);
@@ -2001,7 +2001,7 @@ export default createReactClass({
         // method that does this.
         const sleep = async (ms) => {
             return new Promise(resolve => setTimeout(resolve, ms));
-        }
+        };
 
         console.log("Seshat: Started crawler function");
 
@@ -2020,8 +2020,8 @@ export default createReactClass({
 
             /// There is no checkpoint available currently, one may appear if
             // a sync with limited room timelines happens, so go back to sleep.
-            if (checkpoint ===  undefined) {
-                continue
+            if (checkpoint === undefined) {
+                continue;
             }
 
             // We have a checkpoint, let us fetch some messages, again very
@@ -2033,14 +2033,14 @@ export default createReactClass({
                 // We got to the start of our timeline, lets just
                 // delete our checkpoint and go back to sleep.
                 await platform.removeBacklogCheckpoint(checkpoint);
-                continue
+                continue;
             }
 
             // Convert the plain JSON events into Matrix events so they get
             // decrypted if necessary.
             const matrixEvents = res.chunk.map(eventMapper);
 
-            let decryptionPromises = []
+            const decryptionPromises = [];
 
             matrixEvents.forEach(ev => {
                 if (ev.isBeingDecrypted() || ev.isDecryptionFailure()) {
@@ -2061,36 +2061,36 @@ export default createReactClass({
             const isValidEvent = (value) => {
                 return (value.getType() === "m.room.message" && !value.isRedacted() && !value.isDecryptionFailure());
             };
-            let filteredEvents = matrixEvents.filter(isValidEvent);
+            const filteredEvents = matrixEvents.filter(isValidEvent);
 
             // TODO this should be moved into the platform specific parts
             // Let us convert the events back into a format that Seshat can
             // consume.
-            let events = filteredEvents.map((ev) => {
+            const events = filteredEvents.map((ev) => {
                 const e = ev.event;
                 e.type = ev.getType();
                 e.content = ev.getContent();
 
                 // TODO we should fetch the profile of the sender here instead
                 // of putting an empty one here.
-                let object = {
+                const object = {
                     event: e,
-                    profile: {}
-                }
+                    profile: {},
+                };
                 return object;
             });
 
             // Create a new checkpoint so we can continue crawling the room for
             // messages.
-            let newCheckpoint = {
+            const newCheckpoint = {
                 room_id: checkpoint.room_id,
-                token: res.end
-            }
+                token: res.end,
+            };
 
             console.log(
                 "Seshat: Crawled for events in room",
                 client.getRoom(checkpoint.room_id).name,
-                events
+                events,
             );
 
             try {
@@ -2099,7 +2099,7 @@ export default createReactClass({
                 await platform.addBacklogEvents(events, newCheckpoint, checkpoint);
                 this.backlogChekpoints.push(newCheckpoint);
             } catch (e) {
-                console.log(e)
+                console.log(e);
                 // An error occured, put the checkpoint back so we
                 // can retry.
                 this.backlogChekpoints.push(checkpoint);

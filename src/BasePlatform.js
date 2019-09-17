@@ -164,4 +164,16 @@ export default class BasePlatform {
     async searchEventIndex(term: string): Promise<{}> {
         throw new Error("Unimplemented");
     }
+
+    async addBacklogEvents(events: [], checkpoint = null, oldCheckpoint = null): Promise<> {
+        throw new Error("Unimplemented");
+    }
+
+    async addBacklogCheckpoint(checkpoint): Promise<> {
+        throw new Error("Unimplemented");
+    }
+
+    async removeBacklogCheckpoint(checkpoint): Promise<> {
+        throw new Error("Unimplemented");
+    }
 }

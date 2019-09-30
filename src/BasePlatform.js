@@ -153,6 +153,10 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
+    supportsEventIndexing(): boolean {
+        return false;
+    }
+
     async initEventIndex(userId: string): boolean {
         throw new Error("Unimplemented");
     }

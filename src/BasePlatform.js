@@ -161,6 +161,14 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
+    indexIsEmpty(): Promise<boolean> {
+        throw new Error("Unimplemented");
+    }
+
+    async commitLiveEvents(): void {
+        throw new Error("Unimplemented");
+    }
+
     async searchEventIndex(term: string): Promise<{}> {
         throw new Error("Unimplemented");
     }

@@ -1311,6 +1311,7 @@ export default createReactClass({
 
                 // We only care to crawl the encrypted rooms, non-encrytped
                 // rooms can use the search provided by the Homeserver.
+                // TODO users might want to index non-encrypted rooms as well.
                 const encryptedRooms = rooms.filter(isRoomEncrypted);
 
                 console.log("Seshat: Sync with an empty index, getting checkpoints for the indexer");
@@ -2033,13 +2034,13 @@ export default createReactClass({
 
             const checkpoint = this.crawlerChekpoints.shift();
 
-            console.log("Seshat: using checkpoint", checkpoint);
-
             /// There is no checkpoint available currently, one may appear if
             // a sync with limited room timelines happens, so go back to sleep.
             if (checkpoint === undefined) {
                 continue;
             }
+
+            console.log("Seshat: using checkpoint", checkpoint);
 
             // We have a checkpoint, let us fetch some messages, again very
             // conservatively to not bother our Homeserver too much.

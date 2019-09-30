@@ -1125,9 +1125,18 @@ module.exports = React.createClass({
         debuglog("sending search request");
 
         if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
-            const searchFunc = async function(searchTerm) {
+            const searchFunc = async function(searchTerm, room_id = null) {
                 const platform = PlatformPeg.get();
-                const result = await platform.searchEventIndex(searchTerm);
+
+                let searchArgs = {
+                    search_term: searchTerm
+                };
+
+                if (room_id !== null) {
+                    searchArgs.room_id = room_id
+                }
+
+                const result = await platform.searchEventIndex(searchArgs);
 
                 const response = {
                     search_categories: {
@@ -1143,7 +1152,13 @@ module.exports = React.createClass({
                 return MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
             };
 
-            const searchPromise = searchFunc(term);
+            let searchPromise = null;
+
+            if (scope === "Room") {
+                searchPromise = searchFunc(term, this.state.room.roomId);
+            } else {
+                searchPromise = searchFunc(term);
+            }
 
             this._handleSearchResult(searchPromise).done();
         } else {

@@ -153,7 +153,7 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
-    async initEventIndex(userId: string): void {
+    async initEventIndex(userId: string): boolean {
         throw new Error("Unimplemented");
     }
 
@@ -165,15 +165,15 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
-    async addBacklogEvents(events: [], checkpoint: {} = null, oldCheckpoint: {} = null): Promise<> {
+    async addHistoricEvents(events: [], checkpoint: {} = null, oldCheckpoint: {} = null): Promise<> {
         throw new Error("Unimplemented");
     }
 
-    async addBacklogCheckpoint(checkpoint: {}): Promise<> {
+    async addCrawlerCheckpoint(checkpoint: {}): Promise<> {
         throw new Error("Unimplemented");
     }
 
-    async removeBacklogCheckpoint(checkpoint: {}): Promise<> {
+    async removeCrawlerCheckpoint(checkpoint: {}): Promise<> {
         throw new Error("Unimplemented");
     }
 }

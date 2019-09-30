@@ -1262,10 +1262,9 @@ export default createReactClass({
         // to do the first sync
         this.firstSyncComplete = false;
         this.firstSyncPromise = Promise.defer();
-        this.backlogChekpoints = [];
+        this.crawlerChekpoints = [];
         const cli = MatrixClientPeg.get();
         const IncomingSasDialog = sdk.getComponent('views.dialogs.IncomingSasDialog');
-
         // Allow the JS SDK to reap timeline events. This reduces the amount of
         // memory consumed as the JS SDK stores multiple distinct copies of room
         // state (each of which can be 10s of MBs) for each DISJOINT timeline. This is
@@ -1294,8 +1293,7 @@ export default createReactClass({
             }
 
             const platform = PlatformPeg.get();
-
-            if (!data.oldSyncToken) {
+            const addInitialCheckpoints = async () => {
                 const client = MatrixClientPeg.get();
                 const rooms = client.getRooms();
 
@@ -1307,7 +1305,7 @@ export default createReactClass({
                 // rooms can use the search provided by the Homeserver.
                 const encryptedRooms = rooms.filter(isRoomEncrypted);
 
-                console.log("Seshat: Initial sync, getting checkpoints for the indexer");
+                console.log("Seshat: Sync with an empty index, getting checkpoints for the indexer");
 
                 // This is an initial sync, we gather the prev_batch tokens and
                 // create checkpoints for our message crawler.
@@ -1322,14 +1320,25 @@ export default createReactClass({
                         token: token,
                     };
 
-                    platform.addBacklogCheckpoint(checkpoint);
-                    self.backlogChekpoints.push(checkpoint);
+                    platform.addCrawlerCheckpoint(checkpoint);
+                    self.crawlerChekpoints.push(checkpoint);
                 });
+            }
+
+            if (!data.oldSyncToken) {
+                await addInitialCheckpoints();
             } else {
-                // Load the previously stored checkpoints so our crawler can
-                // continue if there are any.
-                self.backlogChekpoints = await platform.loadCheckpoints();
-                console.log("Seshat: Loaded our checkpoints", self.backlogChekpoints);
+                // If our indexer is empty we're most likely running Riot the
+                // first time it has indexing support so add checkpoints just
+                // like if we're on an initial sync.
+                // Otherwise we're loading our checkpoints from the indexer.
+                const eventIndexWasEmpty = await MatrixClientPeg.eventIndexWasEmpty;
+                if (eventIndexWasEmpty) {
+                    await addInitialCheckpoints();
+                } else {
+                    self.crawlerChekpoints = await platform.loadCheckpoints();
+                    console.log("Seshat: Loaded our checkpoints", self.crawlerChekpoints);
+                }
             }
 
             // Start our crawler.
@@ -2014,7 +2023,7 @@ export default createReactClass({
             // here.
             await sleep(3000);
 
-            const checkpoint = this.backlogChekpoints.shift();
+            const checkpoint = this.crawlerChekpoints.shift();
 
             console.log("Seshat: using checkpoint", checkpoint);
 
@@ -2027,12 +2036,12 @@ export default createReactClass({
             // We have a checkpoint, let us fetch some messages, again very
             // conservatively to not bother our Homeserver too much.
             const eventMapper = client.getEventMapper();
-            const res = await client._createMessagesRequest(checkpoint.room_id, checkpoint.token, 10, "b");
+            const res = await client._createMessagesRequest(checkpoint.room_id, checkpoint.token, 100, "b");
 
             if (res.chunk.length === 0) {
                 // We got to the start of our timeline, lets just
                 // delete our checkpoint and go back to sleep.
-                await platform.removeBacklogCheckpoint(checkpoint);
+                await platform.removeCrawlerCheckpoint(checkpoint);
                 continue;
             }
 
@@ -2094,15 +2103,21 @@ export default createReactClass({
             );
 
             try {
-                // TODO figure out if can stop at this checkpoint
-                // instead of reindexing the whole room every time.
-                await platform.addBacklogEvents(events, newCheckpoint, checkpoint);
-                this.backlogChekpoints.push(newCheckpoint);
+                const eventsWereAlreadyAdded = await platform.addHistoricEvents(events, newCheckpoint, checkpoint);
+                // If all events were already indexed we assume that we catched
+                // up with our index and don't need to crawl the room further.
+                // Let us delete the checkpoint in that case, otherwise push
+                // the new checkpoint to be used by the crawler.
+                if (eventsWereAlreadyAdded) {
+                    await platform.removeCrawlerCheckpoint(newCheckpoint);
+                } else {
+                    this.crawlerChekpoints.push(newCheckpoint);
+                }
             } catch (e) {
                 console.log(e);
                 // An error occured, put the checkpoint back so we
                 // can retry.
-                this.backlogChekpoints.push(checkpoint);
+                this.crawlerChekpoints.push(checkpoint);
             }
         }
     },

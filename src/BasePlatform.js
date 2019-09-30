@@ -165,7 +165,7 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
-    async addHistoricEvents(events: [], checkpoint: {} = null, oldCheckpoint: {} = null): Promise<> {
+    async addHistoricEvents(events: [], checkpoint: {} = null, oldCheckpoint: {} = null): Promise<bool> {
         throw new Error("Unimplemented");
     }
 

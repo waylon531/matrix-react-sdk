@@ -1288,11 +1288,19 @@ export default createReactClass({
         });
 
         cli.on('sync', async function(state, prevState, data) {
-            if (!(state === "SYNCING" && prevState === "PREPARED")) {
+            const platform = PlatformPeg.get();
+
+            if (prevState === "SYNCING" && state === "SYNCING") {
+                // A sync was done, presumably we queued up some live events,
+                // commit them now.
+                console.log("Seshat: Committing events");
+                await platform.commitLiveEvents();
+            }
+
+            if (!(prevState === "PREPARED" && state === "SYNCING")) {
                 return;
             }
 
-            const platform = PlatformPeg.get();
             const addInitialCheckpoints = async () => {
                 const client = MatrixClientPeg.get();
                 const rooms = client.getRooms();
@@ -1332,7 +1340,7 @@ export default createReactClass({
                 // first time it has indexing support so add checkpoints just
                 // like if we're on an initial sync.
                 // Otherwise we're loading our checkpoints from the indexer.
-                const eventIndexWasEmpty = await MatrixClientPeg.eventIndexWasEmpty;
+                const eventIndexWasEmpty = await platform.isEventIndexEmpty();
                 if (eventIndexWasEmpty) {
                     await addInitialCheckpoints();
                 } else {

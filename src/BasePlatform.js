@@ -161,7 +161,7 @@ export default class BasePlatform {
         throw new Error("Unimplemented");
     }
 
-    async addEventToIndex(ev: {}): void {
+    async addEventToIndex(ev: {}, profile: {}): void {
         throw new Error("Unimplemented");
     }
 

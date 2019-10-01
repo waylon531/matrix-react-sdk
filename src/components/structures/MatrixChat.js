@@ -2154,7 +2154,7 @@ export default createReactClass({
                 // up with our index and don't need to crawl the room further.
                 // Let us delete the checkpoint in that case, otherwise push
                 // the new checkpoint to be used by the crawler.
-                if (eventsWereAlreadyAdded) {
+                if (eventsWereAlreadyAdded && !newCheckpoint.fullCrawl) {
                     await platform.removeCrawlerCheckpoint(newCheckpoint);
                 } else {
                     this.crawlerChekpoints.push(newCheckpoint);

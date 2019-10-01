@@ -1454,7 +1454,13 @@ export default createReactClass({
             e.type = ev.getType();
             e.content = ev.getContent();
 
-            platform.addEventToIndex(e);
+            const profile = {
+                displayname: ev.sender.rawDisplayName,
+                avatar_url: ev.sender.getMxcAvatarUrl()
+            }
+            console.log("Seshat: adding live event", e, profile);
+
+            platform.addEventToIndex(e, profile);
         });
 
         cli.on("accountData", function(ev) {

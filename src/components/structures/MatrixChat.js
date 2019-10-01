@@ -2166,7 +2166,13 @@ export default React.createClass({
             // We filter out events for which decryption failed, are redacted
             // or aren't of a type that we know how to index.
             const isValidEvent = (value) => {
-                return (value.getType() === "m.room.message" && !value.isRedacted() && !value.isDecryptionFailure());
+                return ([
+                        "m.room.message",
+                        "m.room.name",
+                        "m.room.topic"
+                    ].indexOf(value.getType()) >= 0
+                        && !value.isRedacted() && !value.isDecryptionFailure()
+                );
             };
             const filteredEvents = matrixEvents.filter(isValidEvent);
 

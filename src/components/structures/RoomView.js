@@ -1147,7 +1147,10 @@ module.exports = createReactClass({
                 const platform = PlatformPeg.get();
 
                 let searchArgs = {
-                    search_term: searchTerm
+                    search_term: searchTerm,
+                    before_limit: 1,
+                    after_limit: 1,
+                    order_by_recent: true,
                 };
 
                 if (room_id !== null) {

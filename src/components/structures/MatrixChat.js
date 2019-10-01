@@ -1316,8 +1316,7 @@ export default createReactClass({
 
                 console.log("Seshat: Sync with an empty index, getting checkpoints for the indexer");
 
-                // This is an initial sync, we gather the prev_batch tokens and
-                // create checkpoints for our message crawler.
+                // Gather the prev_batch tokens and create checkpoints for our message crawler.
                 encryptedRooms.forEach(room => {
                     const timeline = room.getLiveTimeline();
                     const token = timeline.getPaginationToken("b");
@@ -1325,7 +1324,7 @@ export default createReactClass({
                     console.log("Seshat: Got token for indexer", room.roomId, token);
 
                     const checkpoint = {
-                        room_id: room.roomId,
+                        roomId: room.roomId,
                         token: token,
                     };
 
@@ -1335,13 +1334,16 @@ export default createReactClass({
             }
 
             if (!data.oldSyncToken) {
+                /// This is an initial sync, add checkpoints to start crawling
+                // the room timelines.
                 await addInitialCheckpoints();
             } else {
                 // If our indexer is empty we're most likely running Riot the
-                // first time it has indexing support so add checkpoints just
+                // first time with indexing support. Add checkpoints just
                 // like if we're on an initial sync.
                 // Otherwise we're loading our checkpoints from the indexer.
                 const eventIndexWasEmpty = await platform.isEventIndexEmpty();
+
                 if (eventIndexWasEmpty) {
                     await addInitialCheckpoints();
                 } else {
@@ -2042,10 +2044,12 @@ export default createReactClass({
 
             console.log("Seshat: using checkpoint", checkpoint);
 
-            // We have a checkpoint, let us fetch some messages, again very
+            // We have a checkpoint, let us fetch some messages, again, very
             // conservatively to not bother our Homeserver too much.
             const eventMapper = client.getEventMapper();
-            const res = await client._createMessagesRequest(checkpoint.room_id, checkpoint.token, 100, "b");
+            // TODO we need to ensure to use member lazy loading with this
+            // request so we get the correct profiles.
+            const res = await client._createMessagesRequest(checkpoint.roomId, checkpoint.token, 100, "b");
 
             if (res.chunk.length === 0) {
                 // We got to the start of our timeline, lets just
@@ -2101,13 +2105,14 @@ export default createReactClass({
             // Create a new checkpoint so we can continue crawling the room for
             // messages.
             const newCheckpoint = {
-                room_id: checkpoint.room_id,
+                roomId: checkpoint.roomId,
                 token: res.end,
+                fullCrawl: checkpoint.fullCrawl
             };
 
             console.log(
                 "Seshat: Crawled for events in room",
-                client.getRoom(checkpoint.room_id).name,
+                client.getRoom(checkpoint.roomId).name,
                 events,
             );
 

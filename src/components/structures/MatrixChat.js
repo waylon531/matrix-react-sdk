@@ -2058,7 +2058,8 @@ export default createReactClass({
             const eventMapper = client.getEventMapper();
             // TODO we need to ensure to use member lazy loading with this
             // request so we get the correct profiles.
-            const res = await client._createMessagesRequest(checkpoint.roomId, checkpoint.token, 100, "b");
+            const res = await client._createMessagesRequest(checkpoint.roomId,
+                checkpoint.token, 100, "b");
 
             if (res.chunk.length === 0) {
                 // We got to the start of our timeline, lets just
@@ -2075,7 +2076,8 @@ export default createReactClass({
             let profiles = {};
 
             stateEvents.forEach(ev => {
-                if (ev.event.content && ev.event.content.membership === "join") {
+                if (ev.event.content &&
+                    ev.event.content.membership === "join") {
                     profiles[ev.event.sender] = {
                         displayname: ev.event.content.displayname,
                         avatar_url: ev.event.content.avatar_url
@@ -2120,8 +2122,8 @@ export default createReactClass({
                 e.type = ev.getType();
                 e.content = ev.getContent();
 
-                // TODO we should fetch the profile of the sender here instead
-                // of putting an empty one here.
+                // TODO do we need to check if the event has all the valid
+                // attributes?
                 const object = {
                     event: e,
                     profile: profiles[e.sender]
@@ -2144,7 +2146,8 @@ export default createReactClass({
             );
 
             try {
-                const eventsWereAlreadyAdded = await platform.addHistoricEvents(events, newCheckpoint, checkpoint);
+                const eventsAlreadyAdded = await platform.addHistoricEvents(
+                    events, newCheckpoint, checkpoint);
                 // If all events were already indexed we assume that we catched
                 // up with our index and don't need to crawl the room further.
                 // Let us delete the checkpoint in that case, otherwise push

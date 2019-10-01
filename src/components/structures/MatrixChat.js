@@ -2070,6 +2070,18 @@ export default createReactClass({
             // Convert the plain JSON events into Matrix events so they get
             // decrypted if necessary.
             const matrixEvents = res.chunk.map(eventMapper);
+            const stateEvents = res.state.map(eventMapper);
+
+            let profiles = {};
+
+            stateEvents.forEach(ev => {
+                if (ev.event.content && ev.event.content.membership === "join") {
+                    profiles[ev.event.sender] = {
+                        displayname: ev.event.content.displayname,
+                        avatar_url: ev.event.content.avatar_url
+                    };
+                }
+            });
 
             const decryptionPromises = [];
 
@@ -2106,7 +2118,7 @@ export default createReactClass({
                 // of putting an empty one here.
                 const object = {
                     event: e,
-                    profile: {},
+                    profile: profiles[e.sender]
                 };
                 return object;
             });

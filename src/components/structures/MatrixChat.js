@@ -1439,11 +1439,14 @@ export default createReactClass({
         });
 
         cli.on("Room.timeline", function(ev, room, toStartOfTimeline, removed, data) {
-            // We only add new non-redacted events to the store here.
-            // TODO add m.room.topic and m.room.name events as well.
+            // We only add new non-redacted events to the store here. The
+            // crawler function will handle non-live events.
             if (
-              toStartOfTimeline || !data || !data.liveEvent || ev.isRedacted() || ev.getType() !== "m.room.message"
-            ) return;
+                toStartOfTimeline || !data || !data.liveEvent || ev.isRedacted() ||
+                ["m.room.message", "m.room.name", "m.room.topic"].indexOf(ev.getType()) == -1
+            ) {
+                return;
+            }
 
             const platform = PlatformPeg.get();
             const e = ev.event;

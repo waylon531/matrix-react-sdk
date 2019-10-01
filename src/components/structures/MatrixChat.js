@@ -2124,9 +2124,11 @@ export default createReactClass({
 
                 // TODO do we need to check if the event has all the valid
                 // attributes?
+                let profile = {}
+                if (e.sender in profiles) profile = profiles[e.sender];
                 const object = {
                     event: e,
-                    profile: profiles[e.sender]
+                    profile: profile
                 };
                 return object;
             });

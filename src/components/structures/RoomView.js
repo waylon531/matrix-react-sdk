@@ -1156,7 +1156,7 @@ module.exports = React.createClass({
                     search_term: searchTerm,
                     before_limit: 1,
                     after_limit: 1,
-                    order_by_recent: true,
+                    order_by_recency: true,
                 };
 
                 if (roomId !== undefined) {

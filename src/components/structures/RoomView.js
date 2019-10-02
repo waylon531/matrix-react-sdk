@@ -1143,9 +1143,8 @@ module.exports = createReactClass({
         debuglog("sending search request");
         const platform = PlatformPeg.get();
 
-        if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId) && platform.supportsEventIndexing()) {
-            const searchFunc = async function(searchTerm, room_id = null) {
-
+        if (platform.supportsEventIndexing()) {
+            const searchFunc = async function(searchTerm, room_id = null, filter = undefined) {
                 let searchArgs = {
                     search_term: searchTerm,
                     before_limit: 1,
@@ -1153,15 +1152,22 @@ module.exports = createReactClass({
                     order_by_recent: true,
                 };
 
+                let server_side_promise;
+
                 if (room_id !== null) {
                     searchArgs.room_id = room_id
+                } else {
+                    server_side_promise = MatrixClientPeg.get().searchRoomEvents({
+                        filter: filter,
+                        term: searchTerm,
+                    });
                 }
 
-                const result = await platform.searchEventIndex(searchArgs);
+                const local_result = await platform.searchEventIndex(searchArgs);
 
                 const response = {
                     search_categories: {
-                        room_events: result,
+                        room_events: local_result,
                     },
                 };
 
@@ -1170,16 +1176,36 @@ module.exports = createReactClass({
                     highlights: [],
                 };
 
-                return MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
+                let result = MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
+
+                if (server_side_promise === null) {
+                    return result;
+                } else {
+                    let server_side_result = await server_side_promise;
+
+                    // TODO sort the results by recency.
+                    result.count += server_side_result.count;
+                    result.results = result.results.concat(server_side_result.results);
+                    result.highlights = result.highlights.concat(server_side_result.highlights);
+
+                    return result;
+                }
             };
 
             let searchPromise = null;
 
             if (scope === "Room") {
-                searchPromise = searchFunc(term, this.state.room.roomId);
+                if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
+                    searchPromise = searchFunc(term, this.state.room.roomId);
+                } else {
+                    searchPromise = MatrixClientPeg.get().searchRoomEvents({
+                        filter: filter,
+                        term: term,
+                    });
+                }
             } else {
-                // TODO we need to mix in the server side search in here.
-                searchPromise = searchFunc(term);
+                console.log("Seshat: Doing global search", term, filter);
+                searchPromise = searchFunc(term, null, filter);
             }
 
             this._handleSearchResult(searchPromise).done();

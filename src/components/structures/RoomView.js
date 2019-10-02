@@ -1144,7 +1144,7 @@ module.exports = createReactClass({
         const platform = PlatformPeg.get();
 
         if (platform.supportsEventIndexing()) {
-            const searchFunc = async function(searchTerm, room_id = null, filter = undefined) {
+            const searchFunc = async function(searchTerm, room_id = undefined) {
                 let searchArgs = {
                     search_term: searchTerm,
                     before_limit: 1,
@@ -1154,13 +1154,12 @@ module.exports = createReactClass({
 
                 let server_side_promise;
 
-                if (room_id !== null) {
-                    searchArgs.room_id = room_id
-                } else {
+                if (room_id === undefined) {
                     server_side_promise = MatrixClientPeg.get().searchRoomEvents({
-                        filter: filter,
                         term: searchTerm,
                     });
+                } else {
+                    searchArgs.room_id = room_id
                 }
 
                 const local_result = await platform.searchEventIndex(searchArgs);
@@ -1205,7 +1204,7 @@ module.exports = createReactClass({
                 }
             } else {
                 console.log("Seshat: Doing global search", term, filter);
-                searchPromise = searchFunc(term, null, filter);
+                searchPromise = searchFunc(term);
             }
 
             this._handleSearchResult(searchPromise).done();

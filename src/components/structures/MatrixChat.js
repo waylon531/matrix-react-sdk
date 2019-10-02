@@ -1353,6 +1353,7 @@ export default React.createClass({
 
         cli.on('sync', async function(state, prevState, data) {
             const platform = PlatformPeg.get();
+            if (!platform.supportsEventIndexing()) return;
 
             if (prevState === "SYNCING" && state === "SYNCING") {
                 // A sync was done, presumably we queued up some live events,
@@ -1503,6 +1504,9 @@ export default React.createClass({
         });
 
         cli.on("Room.timeline", function(ev, room, toStartOfTimeline, removed, data) {
+            const platform = PlatformPeg.get();
+            if (!platform.supportsEventIndexing()) return;
+
             // We only add new non-redacted events to the store here. The
             // crawler function will handle non-live events.
             if (
@@ -1512,7 +1516,6 @@ export default React.createClass({
                 return;
             }
 
-            const platform = PlatformPeg.get();
             const e = ev.event;
 
             e.type = ev.getType();

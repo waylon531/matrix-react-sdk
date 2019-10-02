@@ -1123,10 +1123,10 @@ module.exports = React.createClass({
         }
 
         debuglog("sending search request");
+        const platform = PlatformPeg.get();
 
-        if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
+        if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId) && platform.supportsEventIndexing()) {
             const searchFunc = async function(searchTerm, room_id = null) {
-                const platform = PlatformPeg.get();
 
                 let searchArgs = {
                     search_term: searchTerm,
@@ -1160,6 +1160,7 @@ module.exports = React.createClass({
             if (scope === "Room") {
                 searchPromise = searchFunc(term, this.state.room.roomId);
             } else {
+                // TODO we need to mix in the server side search in here.
                 searchPromise = searchFunc(term);
             }
 

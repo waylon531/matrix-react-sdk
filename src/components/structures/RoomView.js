@@ -1177,7 +1177,7 @@ module.exports = createReactClass({
 
                 let result = MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
 
-                if (server_side_promise === null) {
+                if (server_side_promise === undefined) {
                     return result;
                 } else {
                     let server_side_result = await server_side_promise;

@@ -224,7 +224,7 @@ class MatrixClientPeg {
         this.matrixClient = createMatrixClient(opts);
 
         let platform = PlatformPeg.get();
-        platform.initEventIndex(creds.userId);
+        if (platform.supportsEventIndexing()) platform.initEventIndex(creds.userId);
 
         // we're going to add eventlisteners for each matrix event tile, so the
         // potential number of event listeners is quite high.

@@ -1126,7 +1126,32 @@ module.exports = React.createClass({
         const platform = PlatformPeg.get();
 
         if (platform.supportsEventIndexing()) {
-            const searchFunc = async function(searchTerm, roomId = undefined) {
+            const combinedSearchFunc = async (searchTerm) => {
+                // Create two promises, one for the local search, one for the
+                // server-side search.
+                const serverSidePromise = MatrixClientPeg.get().searchRoomEvents({
+                    term: searchTerm,
+                });
+                const localPromise = localSearchFunc(searchTerm);
+
+                // Wait for both promises to resolve.
+                await Promise.all([serverSidePromise, localPromise]);
+
+                // Get both search results.
+                const localResult = await localPromise;
+                const serverSideResult = await serverSidePromise;
+
+                // Combine the search results into one result.
+                const result = {}
+                result.count = localResult.count + serverSideResult.count;
+                result.results = localResult.results.concat(serverSideResult.results);
+                result.highlights = localResult.highlights.concat(serverSideResult.highlights);
+
+                // TODO sort the result by recency.
+                return result;
+            };
+
+            const localSearchFunc = async function(searchTerm, roomId = undefined) {
                 const searchArgs = {
                     search_term: searchTerm,
                     before_limit: 1,
@@ -1134,16 +1159,7 @@ module.exports = React.createClass({
                     order_by_recent: true,
                 };
 
-                let serverSidePromise;
-
-                if (roomId === undefined) {
-                    // We're doing a search across all rooms, since we index
-                    // only encrypted rooms locally we need to ask the server
-                    // for help
-                    serverSidePromise = MatrixClientPeg.get().searchRoomEvents({
-                        term: searchTerm,
-                    });
-                } else {
+                if (roomId !== undefined) {
                     searchArgs.room_id = roomId;
                 }
 
@@ -1164,22 +1180,7 @@ module.exports = React.createClass({
                 // expected by the handler method.
                 const result = MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
 
-                if (serverSidePromise === undefined) {
-                    // Search for a single room, just return the result of the
-                    // local search.
-                    return result;
-                } else {
-                    // Search across all rooms, we need to combine the local
-                    // search result and the server side search result.
-                    const serverSideResult = await serverSidePromise;
-
-                    // TODO sort the results by recency.
-                    result.count += serverSideResult.count;
-                    result.results = result.results.concat(serverSideResult.results);
-                    result.highlights = result.highlights.concat(serverSideResult.highlights);
-
-                    return result;
-                }
+                return result;
             };
 
             let searchPromise;
@@ -1188,7 +1189,7 @@ module.exports = React.createClass({
                 if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
                     // The search is for a single encrypted room, use our local
                     // search method.
-                    searchPromise = searchFunc(term, this.state.room.roomId);
+                    searchPromise = localSearchFunc(term, this.state.room.roomId);
                 } else {
                     // The search is for a single non-encrypted room, use the
                     // server-side search.
@@ -1200,7 +1201,7 @@ module.exports = React.createClass({
             } else {
                 // Search across all rooms, combine a server side search and a
                 // local search.
-                searchPromise = searchFunc(term);
+                searchPromise = combinedSearchFunc(term);
             }
 
             this._handleSearchResult(searchPromise).done();

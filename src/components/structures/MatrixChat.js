@@ -1332,7 +1332,7 @@ export default createReactClass({
                     platform.addCrawlerCheckpoint(checkpoint);
                     self.crawlerChekpoints.push(checkpoint);
                 });
-            }
+            };
 
             if (!data.oldSyncToken) {
                 /// This is an initial sync, add checkpoints to start crawling
@@ -1459,8 +1459,8 @@ export default createReactClass({
 
             const profile = {
                 displayname: ev.sender.rawDisplayName,
-                avatar_url: ev.sender.getMxcAvatarUrl()
-            }
+                avatar_url: ev.sender.getMxcAvatarUrl(),
+            };
             console.log("Seshat: adding live event", e, profile);
 
             platform.addEventToIndex(e, profile);
@@ -2076,14 +2076,14 @@ export default createReactClass({
             const matrixEvents = res.chunk.map(eventMapper);
             const stateEvents = res.state.map(eventMapper);
 
-            let profiles = {};
+            const profiles = {};
 
             stateEvents.forEach(ev => {
                 if (ev.event.content &&
                     ev.event.content.membership === "join") {
                     profiles[ev.event.sender] = {
                         displayname: ev.event.content.displayname,
-                        avatar_url: ev.event.content.avatar_url
+                        avatar_url: ev.event.content.avatar_url,
                     };
                 }
             });
@@ -2110,7 +2110,7 @@ export default createReactClass({
                 return ([
                         "m.room.message",
                         "m.room.name",
-                        "m.room.topic"
+                        "m.room.topic",
                     ].indexOf(value.getType()) >= 0
                         && !value.isRedacted() && !value.isDecryptionFailure()
                 );
@@ -2127,11 +2127,11 @@ export default createReactClass({
 
                 // TODO do we need to check if the event has all the valid
                 // attributes?
-                let profile = {}
+                let profile = {};
                 if (e.sender in profiles) profile = profiles[e.sender];
                 const object = {
                     event: e,
-                    profile: profile
+                    profile: profile,
                 };
                 return object;
             });
@@ -2141,7 +2141,7 @@ export default createReactClass({
             const newCheckpoint = {
                 roomId: checkpoint.roomId,
                 token: res.end,
-                fullCrawl: checkpoint.fullCrawl
+                fullCrawl: checkpoint.fullCrawl,
             };
 
             console.log(

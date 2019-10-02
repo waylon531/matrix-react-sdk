@@ -1144,29 +1144,32 @@ module.exports = createReactClass({
         const platform = PlatformPeg.get();
 
         if (platform.supportsEventIndexing()) {
-            const searchFunc = async function(searchTerm, room_id = undefined) {
-                let searchArgs = {
+            const searchFunc = async function(searchTerm, roomId = undefined) {
+                const searchArgs = {
                     search_term: searchTerm,
                     before_limit: 1,
                     after_limit: 1,
                     order_by_recent: true,
                 };
 
-                let server_side_promise;
+                let serverSidePromise;
 
-                if (room_id === undefined) {
-                    server_side_promise = MatrixClientPeg.get().searchRoomEvents({
+                if (roomId === undefined) {
+                    // We're doing a search across all rooms, since we index
+                    // only encrypted rooms locally we need to ask the server
+                    // for help
+                    serverSidePromise = MatrixClientPeg.get().searchRoomEvents({
                         term: searchTerm,
                     });
                 } else {
-                    searchArgs.room_id = room_id
+                    searchArgs.room_id = roomId;
                 }
 
-                const local_result = await platform.searchEventIndex(searchArgs);
+                const localResult = await platform.searchEventIndex(searchArgs);
 
                 const response = {
                     search_categories: {
-                        room_events: local_result,
+                        room_events: localResult,
                     },
                 };
 
@@ -1175,35 +1178,46 @@ module.exports = createReactClass({
                     highlights: [],
                 };
 
-                let result = MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
+                // TODO is there a better way to convert our result into what is
+                // expected by the handler method.
+                const result = MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
 
-                if (server_side_promise === undefined) {
+                if (serverSidePromise === undefined) {
+                    // Search for a single room, just return the result of the
+                    // local search.
                     return result;
                 } else {
-                    let server_side_result = await server_side_promise;
+                    // Search across all rooms, we need to combine the local
+                    // search result and the server side search result.
+                    const serverSideResult = await serverSidePromise;
 
                     // TODO sort the results by recency.
-                    result.count += server_side_result.count;
-                    result.results = result.results.concat(server_side_result.results);
-                    result.highlights = result.highlights.concat(server_side_result.highlights);
+                    result.count += serverSideResult.count;
+                    result.results = result.results.concat(serverSideResult.results);
+                    result.highlights = result.highlights.concat(serverSideResult.highlights);
 
                     return result;
                 }
             };
 
-            let searchPromise = null;
+            let searchPromise;
 
             if (scope === "Room") {
                 if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
+                    // The search is for a single encrypted room, use our local
+                    // search method.
                     searchPromise = searchFunc(term, this.state.room.roomId);
                 } else {
+                    // The search is for a single non-encrypted room, use the
+                    // server-side search.
                     searchPromise = MatrixClientPeg.get().searchRoomEvents({
                         filter: filter,
                         term: term,
                     });
                 }
             } else {
-                console.log("Seshat: Doing global search", term, filter);
+                // Search across all rooms, combine a server side search and a
+                // local search.
                 searchPromise = searchFunc(term);
             }
 

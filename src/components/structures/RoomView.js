@@ -1208,9 +1208,10 @@ module.exports = createReactClass({
                     highlights: [],
                 };
 
-                // TODO is there a better way to convert our result into what is
-                // expected by the handler method.
-                const result = MatrixClientPeg.get()._processRoomEventsSearch(emptyResult, response);
+                // TODO is there a better way to convert our result into what
+                // is expected by the handler method.
+                const result = MatrixClientPeg.get()._processRoomEventsSearch(
+                    emptyResult, response);
 
                 return result;
             };
@@ -1218,10 +1219,12 @@ module.exports = createReactClass({
             let searchPromise;
 
             if (scope === "Room") {
-                if (MatrixClientPeg.get().isRoomEncrypted(this.state.room.roomId)) {
+                const roomId = this.state.room.roomId;
+
+                if (MatrixClientPeg.get().isRoomEncrypted(roomId)) {
                     // The search is for a single encrypted room, use our local
                     // search method.
-                    searchPromise = localSearchFunc(term, this.state.room.roomId);
+                    searchPromise = localSearchFunc(term, roomId);
                 } else {
                     // The search is for a single non-encrypted room, use the
                     // server-side search.

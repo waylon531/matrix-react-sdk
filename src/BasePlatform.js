@@ -188,4 +188,8 @@ export default class BasePlatform {
     async removeCrawlerCheckpoint(checkpoint: {}): Promise<> {
         throw new Error("Unimplemented");
     }
+
+    async deleteEventIndex(): Promise<> {
+        throw new Error("Unimplemented");
+    }
 }

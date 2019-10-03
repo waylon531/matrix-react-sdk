@@ -1351,7 +1351,7 @@ export default React.createClass({
             return self._loggedInView.child.canResetTimelineInRoom(roomId);
         });
 
-        cli.on('sync', async function(state, prevState, data) {
+        cli.on('sync', async (state, prevState, data) => {
             const platform = PlatformPeg.get();
             if (!platform.supportsEventIndexing()) return;
 

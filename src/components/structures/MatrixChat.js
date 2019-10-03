@@ -2042,11 +2042,14 @@ export default createReactClass({
         const client = MatrixClientPeg.get();
         const platform = PlatformPeg.get();
 
-        while (true) {
+        await sleep(3000);
+
+        // TODO add support to cancel this promise and cancel it when logging
+        // out.
+        while(MatrixClientPeg.get() !== null) {
             // This is a low priority task and we don't want to spam our
             // Homeserver with /messages requests so we set a hefty 3s timeout
             // here.
-            await sleep(3000);
 
             const checkpoint = this.crawlerChekpoints.shift();
 
@@ -2170,6 +2173,9 @@ export default createReactClass({
                 // can retry.
                 this.crawlerChekpoints.push(checkpoint);
             }
+            await sleep(3000);
         }
+
+        console.log("Seshat: Stopping crawler function");
     },
 });

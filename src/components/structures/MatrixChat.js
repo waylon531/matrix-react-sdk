@@ -1287,7 +1287,15 @@ export default React.createClass({
     /**
      * Called when the session is logged out
      */
-    _onLoggedOut: function() {
+    _onLoggedOut: async function() {
+        const platform = PlatformPeg.get();
+
+        if (platform.supportsEventIndexing()) {
+            console.log("Seshat: Deleting event index.");
+            this.crawlerRef.cancel();
+            await platform.deleteEventIndex();
+        }
+
         this.notifyNewScreen('login');
         this.setStateForNewView({
             view: VIEWS.LOGIN,
@@ -1421,20 +1429,9 @@ export default React.createClass({
             }
 
             // Start our crawler.
-            self.crawlerRef = self.crawlerFunc();
-        });
-
-        cli.on("Session.logged_out", async (errObj) => {
-            const platform = PlatformPeg.get();
-
-            if (!platform.supportsEventIndexing()) return;
-            if (errObj.httpStatus === 401 && errObj.data
-                && errObj.data['soft_logout']) {
-                return;
-            }
-
-            console.log("Seshat: Deleting event index.");
-            await platform.deleteEventIndex();
+            const crawlerHandle = {};
+            self.crawlerFunc(crawlerHandle);
+            self.crawlerRef = crawlerHandle;
         });
 
         cli.on('sync', function(state, prevState, data) {
@@ -2110,26 +2107,37 @@ export default React.createClass({
         console.error(`Unknown view ${this.state.view}`);
     },
 
-    async crawlerFunc() {
+    async crawlerFunc(handle) {
         // TODO either put this in a better place or find a library provided
         // method that does this.
         const sleep = async (ms) => {
             return new Promise(resolve => setTimeout(resolve, ms));
         };
 
+        let cancelled = false;
+
         console.log("Seshat: Started crawler function");
 
         const client = MatrixClientPeg.get();
         const platform = PlatformPeg.get();
 
-        await sleep(3000);
+        handle.cancel = () => {
+            console.log("Seshat: Cancelling our crawler");
+            cancelled = true;
+        };
 
-        // TODO add support to cancel this promise and cancel it when logging
-        // out.
-        while (MatrixClientPeg.get() !== null) {
+        while (!cancelled) {
             // This is a low priority task and we don't want to spam our
             // Homeserver with /messages requests so we set a hefty 3s timeout
             // here.
+            await sleep(3000);
+
+            if (cancelled) {
+                console.log("Seshat: Crawler got cancelled");
+                break;
+            }
+
+            console.log("Seshat: Trying to crawl");
 
             const checkpoint = this.crawlerChekpoints.shift();
 
@@ -2253,7 +2261,6 @@ export default React.createClass({
                 // can retry.
                 this.crawlerChekpoints.push(checkpoint);
             }
-            await sleep(3000);
         }
 
         console.log("Seshat: Stopping crawler function");

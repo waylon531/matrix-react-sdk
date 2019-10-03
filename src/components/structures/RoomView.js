@@ -1161,11 +1161,25 @@ module.exports = createReactClass({
 
                 // Combine the search results into one result.
                 const result = {}
+
+                // Our localResult and serverSideResult are both ordered by
+                // recency separetly, when we combine them the order might not
+                // be the right one so we need to sort them.
+                const compare = (a, b) => {
+                    const aEvent = a.context.getEvent().event;
+                    const bEvent = b.context.getEvent().event;
+
+                    if (aEvent.origin_server_ts >
+                        bEvent.origin_server_ts) return -1;
+                    if (aEvent.origin_server_ts <
+                        bEvent.origin_server_ts) return 1;
+                    return 0;
+                };
+
                 result.count = localResult.count + serverSideResult.count;
-                result.results = localResult.results.concat(serverSideResult.results);
+                result.results = localResult.results.concat(serverSideResult.results).sort(compare);
                 result.highlights = localResult.highlights.concat(serverSideResult.highlights);
 
-                // TODO sort the result by recency.
                 return result;
             };
 

@@ -1391,7 +1391,7 @@ export default React.createClass({
 
                 // Gather the prev_batch tokens and create checkpoints for our
                 // message crawler.
-                encryptedRooms.forEach(room => {
+                await Promise.all(encryptedRooms.map(async (room) => {
                     const timeline = room.getLiveTimeline();
                     const token = timeline.getPaginationToken("b");
 
@@ -1403,9 +1403,9 @@ export default React.createClass({
                         token: token,
                     };
 
-                    platform.addCrawlerCheckpoint(checkpoint);
+                    await platform.addCrawlerCheckpoint(checkpoint);
                     self.crawlerChekpoints.push(checkpoint);
-                });
+                }));
             };
 
             if (!data.oldSyncToken) {

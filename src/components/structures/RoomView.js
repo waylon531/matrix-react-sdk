@@ -1147,7 +1147,8 @@ module.exports = createReactClass({
             const combinedSearchFunc = async (searchTerm) => {
                 // Create two promises, one for the local search, one for the
                 // server-side search.
-                const serverSidePromise = MatrixClientPeg.get().searchRoomEvents({
+                const client = MatrixClientPeg.get();
+                const serverSidePromise = client.searchRoomEvents({
                     term: searchTerm,
                 });
                 const localPromise = localSearchFunc(searchTerm);
@@ -1177,13 +1178,15 @@ module.exports = createReactClass({
                 };
 
                 result.count = localResult.count + serverSideResult.count;
-                result.results = localResult.results.concat(serverSideResult.results).sort(compare);
-                result.highlights = localResult.highlights.concat(serverSideResult.highlights);
+                result.results = localResult.results.concat(
+                    serverSideResult.results).sort(compare);
+                result.highlights = localResult.highlights.concat(
+                    serverSideResult.highlights);
 
                 return result;
             };
 
-            const localSearchFunc = async function(searchTerm, roomId = undefined) {
+            const localSearchFunc = async (searchTerm, roomId = undefined) => {
                 const searchArgs = {
                     search_term: searchTerm,
                     before_limit: 1,
@@ -1192,10 +1195,11 @@ module.exports = createReactClass({
                 };
 
                 if (roomId !== undefined) {
-                    searchArgs.roomId = roomId;
+                    searchArgs.room_id = roomId;
                 }
 
-                const localResult = await platform.searchEventIndex(searchArgs);
+                const localResult = await platform.searchEventIndex(
+                    searchArgs);
 
                 const response = {
                     search_categories: {

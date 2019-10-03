@@ -1357,6 +1357,19 @@ export default createReactClass({
             self.crawlerRef = self.crawlerFunc();
         });
 
+        cli.on("Session.logged_out", async (errObj) => {
+            const platform = PlatformPeg.get();
+
+            if (!platform.supportsEventIndexing()) return;
+            if (errObj.httpStatus === 401 && errObj.data
+                && errObj.data['soft_logout']) {
+                return;
+            }
+
+            console.log("Seshat: Deleting event index.");
+            await platform.deleteEventIndex();
+        });
+
         cli.on('sync', function(state, prevState, data) {
             // LifecycleStore and others cannot directly subscribe to matrix client for
             // events because flux only allows store state changes during flux dispatches.

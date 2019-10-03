@@ -1192,7 +1192,7 @@ module.exports = createReactClass({
                 };
 
                 if (roomId !== undefined) {
-                    searchArgs.room_id = roomId;
+                    searchArgs.roomId = roomId;
                 }
 
                 const localResult = await platform.searchEventIndex(searchArgs);

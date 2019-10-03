@@ -1442,6 +1442,8 @@ export default createReactClass({
         cli.on("Room.timeline", function(ev, room, toStartOfTimeline, removed, data) {
             const platform = PlatformPeg.get();
             if (!platform.supportsEventIndexing()) return;
+            // We only index encrypted rooms locally.
+            if (!MatrixClientPeg.get().isRoomEncrypted(room.roomId)) return;
 
             // We only add new non-redacted events to the store here. The
             // crawler function will handle non-live events.

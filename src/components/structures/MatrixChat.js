@@ -1315,14 +1315,16 @@ export default createReactClass({
                 // TODO users might want to index non-encrypted rooms as well.
                 const encryptedRooms = rooms.filter(isRoomEncrypted);
 
-                console.log("Seshat: Sync with an empty index, getting checkpoints for the indexer");
+                console.log("Seshat: Adding initial crawler checkpoints");
 
-                // Gather the prev_batch tokens and create checkpoints for our message crawler.
+                // Gather the prev_batch tokens and create checkpoints for our
+                // message crawler.
                 encryptedRooms.forEach(room => {
                     const timeline = room.getLiveTimeline();
                     const token = timeline.getPaginationToken("b");
 
-                    console.log("Seshat: Got token for indexer", room.roomId, token);
+                    console.log("Seshat: Got token for indexer", room.roomId,
+                        token);
 
                     const checkpoint = {
                         roomId: room.roomId,
@@ -1349,7 +1351,8 @@ export default createReactClass({
                     await addInitialCheckpoints();
                 } else {
                     self.crawlerChekpoints = await platform.loadCheckpoints();
-                    console.log("Seshat: Loaded our checkpoints", self.crawlerChekpoints);
+                    console.log("Seshat: Loaded our checkpoints",
+                        self.crawlerChekpoints);
                 }
             }
 
@@ -2059,7 +2062,7 @@ export default createReactClass({
 
         // TODO add support to cancel this promise and cancel it when logging
         // out.
-        while(MatrixClientPeg.get() !== null) {
+        while (MatrixClientPeg.get() !== null) {
             // This is a low priority task and we don't want to spam our
             // Homeserver with /messages requests so we set a hefty 3s timeout
             // here.

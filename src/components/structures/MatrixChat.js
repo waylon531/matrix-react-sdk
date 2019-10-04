@@ -2061,7 +2061,6 @@ export default createReactClass({
         const platform = PlatformPeg.get();
 
         handle.cancel = () => {
-            console.log("Seshat: Cancelling our crawler");
             cancelled = true;
         };
 
@@ -2072,11 +2071,8 @@ export default createReactClass({
             await sleep(3000);
 
             if (cancelled) {
-                console.log("Seshat: Crawler got cancelled");
                 break;
             }
-
-            console.log("Seshat: Trying to crawl");
 
             const checkpoint = this.crawlerChekpoints.shift();
 
@@ -2086,7 +2082,7 @@ export default createReactClass({
                 continue;
             }
 
-            console.log("Seshat: using checkpoint", checkpoint);
+            console.log("Seshat: crawling using checkpoint", checkpoint);
 
             // We have a checkpoint, let us fetch some messages, again, very
             // conservatively to not bother our Homeserver too much.
@@ -2146,7 +2142,13 @@ export default createReactClass({
                     ].indexOf(value.getType()) >= 0
                         && !value.isRedacted() && !value.isDecryptionFailure()
                 );
+                // TODO do we need to check if the event has all the valid
+                // attributes?
             };
+
+            // TODO if there ar no events at this point we're missing a lot
+            // decryption keys, do we wan't to retry this checkpoint at a later
+            // stage?
             const filteredEvents = matrixEvents.filter(isValidEvent);
 
             // TODO this should be moved into the platform specific parts
@@ -2157,8 +2159,6 @@ export default createReactClass({
                 e.type = ev.getType();
                 e.content = ev.getContent();
 
-                // TODO do we need to check if the event has all the valid
-                // attributes?
                 let profile = {};
                 if (e.sender in profiles) profile = profiles[e.sender];
                 const object = {
@@ -2177,9 +2177,9 @@ export default createReactClass({
             };
 
             console.log(
-                "Seshat: Crawled for events in room",
+                "Seshat: Crawled room",
                 client.getRoom(checkpoint.roomId).name,
-                events,
+                "and fetched", events.length, "events."
             );
 
             try {

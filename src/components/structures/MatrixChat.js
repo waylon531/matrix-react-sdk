@@ -2261,13 +2261,13 @@ export default React.createClass({
                 // up with our index and don't need to crawl the room further.
                 // Let us delete the checkpoint in that case, otherwise push
                 // the new checkpoint to be used by the crawler.
-                if (eventsAlreadyAdded && !newCheckpoint.fullCrawl) {
+                if (eventsAlreadyAdded === true && newCheckpoint.fullCrawl !== true) {
                     await platform.removeCrawlerCheckpoint(newCheckpoint);
                 } else {
                     this.crawlerChekpoints.push(newCheckpoint);
                 }
             } catch (e) {
-                console.log(e);
+                console.log("Seshat: Error durring a crawl", e);
                 // An error occured, put the checkpoint back so we
                 // can retry.
                 this.crawlerChekpoints.push(checkpoint);

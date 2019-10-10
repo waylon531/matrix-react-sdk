@@ -1302,75 +1302,78 @@ export default createReactClass({
             const platform = PlatformPeg.get();
             if (!platform.supportsEventIndexing()) return;
 
+            if (prevState === null && state === "PREPARED") {
+                /// Load our stored checkpoints, if any.
+                self.crawlerChekpoints = await platform.loadCheckpoints();
+                console.log("Seshat: Loaded checkpoints",
+                            self.crawlerChekpoints);
+                return;
+            }
+
+            if (prevState === "PREPARED" && state === "SYNCING") {
+                const addInitialCheckpoints = async () => {
+                    const client = MatrixClientPeg.get();
+                    const rooms = client.getRooms();
+
+                    const isRoomEncrypted = (room) => {
+                        return client.isRoomEncrypted(room.roomId);
+                    };
+
+                    // We only care to crawl the encrypted rooms, non-encrytped
+                    // rooms can use the search provided by the Homeserver.
+                    const encryptedRooms = rooms.filter(isRoomEncrypted);
+
+                    console.log("Seshat: Adding initial crawler checkpoints");
+
+                    // Gather the prev_batch tokens and create checkpoints for
+                    // our message crawler.
+                    await Promise.all(encryptedRooms.map(async (room) => {
+                        const timeline = room.getLiveTimeline();
+                        const token = timeline.getPaginationToken("b");
+
+                        console.log("Seshat: Got token for indexer",
+                                    room.roomId, token);
+
+                        const backCheckpoint = {
+                            roomId: room.roomId,
+                            token: token,
+                            direction: "b",
+                        };
+
+                        const forwardCheckpoint = {
+                            roomId: room.roomId,
+                            token: token,
+                            direction: "f",
+                        };
+
+                        await platform.addCrawlerCheckpoint(backCheckpoint);
+                        await platform.addCrawlerCheckpoint(forwardCheckpoint);
+                        self.crawlerChekpoints.push(backCheckpoint);
+                        self.crawlerChekpoints.push(forwardCheckpoint);
+                    }));
+                };
+
+                // If our indexer is empty we're most likely running Riot the
+                // first time with indexing support or running it with an
+                // initial sync. Add checkpoints to crawl our encrypted rooms.
+                const eventIndexWasEmpty = await platform.isEventIndexEmpty();
+                if (eventIndexWasEmpty)
+                    await addInitialCheckpoints();
+
+                // Start our crawler.
+                const crawlerHandle = {};
+                self.crawlerFunc(crawlerHandle);
+                self.crawlerRef = crawlerHandle;
+                return;
+            }
+
             if (prevState === "SYNCING" && state === "SYNCING") {
                 // A sync was done, presumably we queued up some live events,
                 // commit them now.
                 console.log("Seshat: Committing events");
                 await platform.commitLiveEvents();
-            }
-
-            if (!(prevState === "PREPARED" && state === "SYNCING")) {
                 return;
             }
-
-            const addInitialCheckpoints = async () => {
-                const client = MatrixClientPeg.get();
-                const rooms = client.getRooms();
-
-                const isRoomEncrypted = (room) => {
-                    return client.isRoomEncrypted(room.roomId);
-                };
-
-                // We only care to crawl the encrypted rooms, non-encrytped
-                // rooms can use the search provided by the Homeserver.
-                // TODO users might want to index non-encrypted rooms as well.
-                const encryptedRooms = rooms.filter(isRoomEncrypted);
-
-                console.log("Seshat: Adding initial crawler checkpoints");
-
-                // Gather the prev_batch tokens and create checkpoints for our
-                // message crawler.
-                await Promise.all(encryptedRooms.map(async (room) => {
-                    const timeline = room.getLiveTimeline();
-                    const token = timeline.getPaginationToken("b");
-
-                    console.log("Seshat: Got token for indexer", room.roomId,
-                        token);
-
-                    const checkpoint = {
-                        roomId: room.roomId,
-                        token: token,
-                    };
-
-                    await platform.addCrawlerCheckpoint(checkpoint);
-                    self.crawlerChekpoints.push(checkpoint);
-                }));
-            };
-
-            if (!data.oldSyncToken) {
-                /// This is an initial sync, add checkpoints to start crawling
-                // the room timelines.
-                await addInitialCheckpoints();
-            } else {
-                // If our indexer is empty we're most likely running Riot the
-                // first time with indexing support. Add checkpoints just
-                // like if we're on an initial sync.
-                // Otherwise we're loading our checkpoints from the indexer.
-                const eventIndexWasEmpty = await platform.isEventIndexEmpty();
-
-                if (eventIndexWasEmpty) {
-                    await addInitialCheckpoints();
-                } else {
-                    self.crawlerChekpoints = await platform.loadCheckpoints();
-                    console.log("Seshat: Loaded our checkpoints",
-                        self.crawlerChekpoints);
-                }
-            }
-
-            // Start our crawler.
-            const crawlerHandle = {};
-            self.crawlerFunc(crawlerHandle);
-            self.crawlerRef = crawlerHandle;
         });
 
         cli.on('sync', function(state, prevState, data) {
@@ -2094,7 +2097,7 @@ export default createReactClass({
             // TODO we need to ensure to use member lazy loading with this
             // request so we get the correct profiles.
             const res = await client._createMessagesRequest(checkpoint.roomId,
-                checkpoint.token, 100, "b");
+                checkpoint.token, 100, checkpoint.direction);
 
             if (res.chunk.length === 0) {
                 // We got to the start of our timeline, lets just
@@ -2178,6 +2181,7 @@ export default createReactClass({
                 roomId: checkpoint.roomId,
                 token: res.end,
                 fullCrawl: checkpoint.fullCrawl,
+                direction: checkpoint.direction,
             };
 
             console.log(
@@ -2227,14 +2231,31 @@ export default createReactClass({
                     timeline.getPaginationToken("b"),
                     timeline.getPaginationToken("f"));
 
-        const checkpoint = {
+        const backwardsCheckpoint = {
             roomId: room.roomId,
             token: token,
+            fullCrawl: false,
+            direction: "b",
+        };
+
+        const forwardsCheckpoint = {
+            roomId: room.roomId,
+            token: token,
+            fullCrawl: false,
+            direction: "f",
         };
 
         console.log("Seshat: Added checkpoint because of a limited timeline",
-            checkpoint);
+            backwardsCheckpoint, forwardsCheckpoint);
 
-        await platform.addCrawlerCheckpoint(checkpoint);
+        console.log("Seshat: Current crawler checkpoints", this.crawlerChekpoints);
+
+        await platform.addCrawlerCheckpoint(backwardsCheckpoint);
+        await platform.addCrawlerCheckpoint(forwardsCheckpoint);
+
+        this.crawlerChekpoints.push(backwardsCheckpoint);
+        this.crawlerChekpoints.push(forwardsCheckpoint);
+
+        console.log("Seshat: Crawler checkpoints after addition", this.crawlerChekpoints);
     },
 });

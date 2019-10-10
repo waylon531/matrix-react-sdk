@@ -2306,8 +2306,6 @@ export default React.createClass({
         if (!platform.supportsEventIndexing()) return;
         if (!MatrixClientPeg.get().isRoomEncrypted(roomId)) return;
 
-        console.log("Seshat: Reset timeline of encrypted room", roomId);
-
         const client = MatrixClientPeg.get();
         const room = client.getRoom(roomId);
 
@@ -2315,9 +2313,6 @@ export default React.createClass({
 
         const timeline = room.getLiveTimeline();
         const token = timeline.getPaginationToken("b");
-        console.log("Seshat: Resetting live timeline", timeline.getEvents(),
-                    timeline.getPaginationToken("b"),
-                    timeline.getPaginationToken("f"));
 
         const backwardsCheckpoint = {
             roomId: room.roomId,
@@ -2336,14 +2331,10 @@ export default React.createClass({
         console.log("Seshat: Added checkpoint because of a limited timeline",
             backwardsCheckpoint, forwardsCheckpoint);
 
-        console.log("Seshat: Current crawler checkpoints", this.crawlerChekpoints);
-
         await platform.addCrawlerCheckpoint(backwardsCheckpoint);
         await platform.addCrawlerCheckpoint(forwardsCheckpoint);
 
         this.crawlerChekpoints.push(backwardsCheckpoint);
         this.crawlerChekpoints.push(forwardsCheckpoint);
-
-        console.log("Seshat: Crawler checkpoints after addition", this.crawlerChekpoints);
     },
 });

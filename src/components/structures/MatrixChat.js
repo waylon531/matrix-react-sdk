@@ -1544,7 +1544,7 @@ export default React.createClass({
             } else {
                 // If the event is decrypted or is unencrypted add it to the
                 // index now.
-                await addLiveEventToIndex(ev);
+                await self.addLiveEventToIndex(ev);
             }
         });
 
@@ -1557,7 +1557,7 @@ export default React.createClass({
             // If the event isn't in our live event set, ignore it.
             if (!self.liveEventsForIndex.delete(eventId)) return;
             if (err) return;
-            await addLiveEventToIndex(ev);
+            await self.addLiveEventToIndex(ev);
         });
 
         cli.on("accountData", function(ev) {

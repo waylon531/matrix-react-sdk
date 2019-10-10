@@ -2245,13 +2245,14 @@ export default React.createClass({
             // stage?
             const filteredEvents = matrixEvents.filter(isValidEvent);
 
-            // TODO this should be moved into the platform specific parts
             // Let us convert the events back into a format that Seshat can
             // consume.
             const events = filteredEvents.map((ev) => {
-                const e = ev.event;
-                e.type = ev.getType();
-                e.content = ev.getContent();
+                const jsonEvent = ev.toJSON();
+
+                let e;
+                if (ev.isEncrypted()) e = jsonEvent.decrypted;
+                else e = jsonEvent;
 
                 let profile = {};
                 if (e.sender in profiles) profile = profiles[e.sender];

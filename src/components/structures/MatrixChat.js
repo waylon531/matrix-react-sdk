@@ -1271,6 +1271,7 @@ export default createReactClass({
         this.firstSyncComplete = false;
         this.firstSyncPromise = Promise.defer();
         this.crawlerChekpoints = [];
+        this.liveEventsForIndex = new Set();
         const cli = MatrixClientPeg.get();
         const IncomingSasDialog = sdk.getComponent('views.dialogs.IncomingSasDialog');
         // Allow the JS SDK to reap timeline events. This reduces the amount of
@@ -1461,34 +1462,38 @@ export default createReactClass({
         cli.on("Room.timeline", async(ev, room, toStartOfTimeline, removed, data) => {
             const platform = PlatformPeg.get();
             if (!platform.supportsEventIndexing()) return;
+
             // We only index encrypted rooms locally.
             if (!MatrixClientPeg.get().isRoomEncrypted(room.roomId)) return;
 
-            if (ev.isBeingDecrypted() &&  !ev.isDecryptionFailure()) {
-                await ev._decryptionPromise
-            }
-
-            // We only add new non-redacted events to the store here. The
-            // crawler function will handle non-live events.
-            if (
-                toStartOfTimeline || !data || !data.liveEvent || ev.isRedacted() ||
-                ["m.room.message", "m.room.name", "m.room.topic"].indexOf(ev.getType()) == -1
-            ) {
+            // If it isn't a live event or if it's redacted there's nothing to
+            // do.
+            if (toStartOfTimeline || !data || !data.liveEvent
+                || ev.isRedacted())
                 return;
+
+            // If the event is not yet decrypted mark it for the
+            // Event.decrypted callback.
+            if (ev.isBeingDecrypted()) {
+                const eventId = ev.getId();
+                self.liveEventsForIndex.add(eventId);
+            } else {
+                // If the event is decrypted or is unencrypted add it to the
+                // index now.
+                await addLiveEventToIndex(ev);
             }
+        });
 
-            const e = ev.event;
+        cli.on("Event.decrypted", async (ev, err) => {
+            const platform = PlatformPeg.get();
+            if (!platform.supportsEventIndexing()) return;
 
-            e.type = ev.getType();
-            e.content = ev.getContent();
+            const eventId = ev.getId();
 
-            const profile = {
-                displayname: ev.sender.rawDisplayName,
-                avatar_url: ev.sender.getMxcAvatarUrl(),
-            };
-            console.log("Seshat: adding live event", e, profile);
-
-            platform.addEventToIndex(e, profile);
+            // If the event isn't in our live event set, ignore it.
+            if (!self.liveEventsForIndex.delete(eventId)) return;
+            if (err) return;
+            await addLiveEventToIndex(ev);
         });
 
         cli.on("accountData", function(ev) {
@@ -2051,6 +2056,24 @@ export default createReactClass({
         return <ErrorBoundary>
             {view}
         </ErrorBoundary>;
+    },
+
+    async addLiveEventToIndex(ev) {
+        const platform = PlatformPeg.get();
+        if (!platform.supportsEventIndexing()) return;
+
+        if (["m.room.message", "m.room.name", "m.room.topic"]
+            .indexOf(ev.getType()) == -1) {
+            return;
+        }
+
+        const e = ev.toJSON().decrypted;
+        const profile = {
+            displayname: ev.sender.rawDisplayName,
+            avatar_url: ev.sender.getMxcAvatarUrl(),
+        };
+
+        platform.addEventToIndex(e, profile);
     },
 
     async crawlerFunc(handle) {

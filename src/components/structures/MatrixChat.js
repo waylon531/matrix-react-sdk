@@ -2187,7 +2187,7 @@ export default React.createClass({
                 checkpoint.token, 100, checkpoint.direction);
 
             if (res.chunk.length === 0) {
-                // We got to the start of our timeline, lets just
+                // We got to the start/end of our timeline, lets just
                 // delete our checkpoint and go back to sleep.
                 await platform.removeCrawlerCheckpoint(checkpoint);
                 continue;

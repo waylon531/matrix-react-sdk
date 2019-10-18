@@ -2129,13 +2129,13 @@ export default createReactClass({
                     checkpoint.roomId, checkpoint.token, 100,
                     checkpoint.direction);
             } catch (e) {
-                console.log("Seshat: Error crawling events:", e)
+                console.log("Seshat: Error crawling events:", e);
                 this.crawlerChekpoints.push(checkpoint);
                 continue
             }
 
             if (res.chunk.length === 0) {
-                console.log("Seshat: Done with the checkpoint", checkpoint)
+                console.log("Seshat: Done with the checkpoint", checkpoint);
                 // We got to the start/end of our timeline, lets just
                 // delete our checkpoint and go back to sleep.
                 await platform.removeCrawlerCheckpoint(checkpoint);
@@ -2238,7 +2238,8 @@ export default createReactClass({
                 // Let us delete the checkpoint in that case, otherwise push
                 // the new checkpoint to be used by the crawler.
                 if (eventsAlreadyAdded === true && newCheckpoint.fullCrawl !== true) {
-                    console.log("Seshat: Checkpoint had already all events added, stopping the crawl", checkpoint);
+                    console.log("Seshat: Checkpoint had already all events",
+                                "added, stopping the crawl", checkpoint);
                     await platform.removeCrawlerCheckpoint(newCheckpoint);
                 } else {
                     this.crawlerChekpoints.push(newCheckpoint);

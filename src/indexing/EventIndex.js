@@ -395,6 +395,11 @@ export default class EventIndex {
         this._crawler.cancel();
     }
 
+    isCrawlerRunning() {
+        if (this._crawlerRef === null) return false;
+        else return true;
+    }
+
     async close() {
         const indexManager = PlatformPeg.get().getEventIndexingManager();
         this.removeListeners();

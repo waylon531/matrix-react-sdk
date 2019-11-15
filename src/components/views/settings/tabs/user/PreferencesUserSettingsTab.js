@@ -23,6 +23,7 @@ import SettingsStore from "../../../../../settings/SettingsStore";
 import Field from "../../../elements/Field";
 import sdk from "../../../../..";
 import PlatformPeg from "../../../../../PlatformPeg";
+import EventIndexPeg from "../../../../../EventIndexPeg";
 
 export default class PreferencesUserSettingsTab extends React.Component {
     static COMPOSER_SETTINGS = [
@@ -71,6 +72,7 @@ export default class PreferencesUserSettingsTab extends React.Component {
             alwaysShowMenuBarSupported: false,
             minimizeToTray: true,
             minimizeToTraySupported: false,
+            eventIndexingEnabled: false,
             autocompleteDelay:
                 SettingsStore.getValueAt(SettingLevel.DEVICE, 'autocompleteDelay').toString(10),
             readMarkerInViewThresholdMs:
@@ -101,6 +103,11 @@ export default class PreferencesUserSettingsTab extends React.Component {
             minimizeToTray = await platform.getMinimizeToTrayEnabled();
         }
 
+        const eventIndex = EventIndexPeg.get();
+        let eventIndexingEnabled = false;
+
+        if (eventIndex !== null) eventIndexingEnabled = eventIndex.isCrawlerRunning();
+
         this.setState({
             autoLaunch,
             autoLaunchSupported,
@@ -108,6 +115,7 @@ export default class PreferencesUserSettingsTab extends React.Component {
             alwaysShowMenuBar,
             minimizeToTraySupported,
             minimizeToTray,
+            eventIndexingEnabled,
         });
     }
 
@@ -137,6 +145,12 @@ export default class PreferencesUserSettingsTab extends React.Component {
         this.setState({readMarkerOutOfViewThresholdMs: e.target.value});
         SettingsStore.setValue("readMarkerOutOfViewThresholdMs", null, SettingLevel.DEVICE, e.target.value);
     };
+
+    _onEventIndexingEnabledChange = (checked) => {
+        if (checked) EventIndexPeg.start();
+        else EventIndexPeg.stop();
+        this.setState({eventIndexingEnabled: checked});
+    }
 
     _renderGroup(settingIds) {
         const SettingsFlag = sdk.getComponent("views.elements.SettingsFlag");
@@ -168,9 +182,37 @@ export default class PreferencesUserSettingsTab extends React.Component {
                 label={_t('Show tray icon and minimize window to it on close')} />;
         }
 
+        let eventIndexingSettings = null;
+
+        if (EventIndexPeg.get() !== null) {
+            eventIndexingSettings = (
+                <div className="mx_SettingsTab_section">
+                    <span className="mx_SettingsTab_subheading">{_t("Encrypted search")}</span>
+                    {
+                        _t( "To enable search in encrypted rooms, Riot needs to run " +
+                            "a background process to download historical messages "   +
+                            "from those rooms to your computer."
+                        )
+                    }
+                    <div className='mx_SettingsTab_subsectionText'>
+                        {_t("Message disk usage:")} "10MB"<br />
+                        {_t("Currently downloading meesages in N rooms")}<br />
+                    </div>
+
+                    <LabelledToggleSwitch
+                        value={this.state.eventIndexingEnabled}
+                        onChange={this._onEventIndexingEnabledChange}
+                        label={_t('Enable event indexing')} />
+                </div>
+            );
+        }
+
         return (
             <div className="mx_SettingsTab mx_PreferencesUserSettingsTab">
                 <div className="mx_SettingsTab_heading">{_t("Preferences")}</div>
+
+                {eventIndexingSettings}
+
                 <div className="mx_SettingsTab_section">
                     <span className="mx_SettingsTab_subheading">{_t("Composer")}</span>
                     {this._renderGroup(PreferencesUserSettingsTab.COMPOSER_SETTINGS)}

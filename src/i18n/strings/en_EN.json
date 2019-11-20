@@ -382,6 +382,7 @@
     "Allow fallback call assist server turn.matrix.org when your homeserver does not offer one (your IP address would be shared during a call)": "Allow fallback call assist server turn.matrix.org when your homeserver does not offer one (your IP address would be shared during a call)",
     "Send read receipts for messages (requires compatible homeserver to disable)": "Send read receipts for messages (requires compatible homeserver to disable)",
     "Show previews/thumbnails for images": "Show previews/thumbnails for images",
+    "How long should the crawler wait between requests": "How long should the crawler wait between requests",
     "Collecting app version information": "Collecting app version information",
     "Collecting logs": "Collecting logs",
     "Uploading report": "Uploading report",
@@ -684,6 +685,12 @@
     "Start automatically after system login": "Start automatically after system login",
     "Always show the window menu bar": "Always show the window menu bar",
     "Show tray icon and minimize window to it on close": "Show tray icon and minimize window to it on close",
+    "Close button should minimize window to tray": "Close button should minimize window to tray",
+    "Encrypted search": "Encrypted search",
+    "To enable search in encrypted rooms, Riot needs to run a background process to download historical messages from those rooms to your computer.": "To enable search in encrypted rooms, Riot needs to run a background process to download historical messages from those rooms to your computer.",
+    "Message disk usage:": "Message disk usage:",
+    "Currently downloading meesages in N rooms": "Currently downloading meesages in N rooms",
+    "Enable event indexing": "Enable event indexing",
     "Preferences": "Preferences",
     "Composer": "Composer",
     "Timeline": "Timeline",
@@ -1916,10 +1923,5 @@
     "If you didn't remove the recovery method, an attacker may be trying to access your account. Change your account password and set a new recovery method immediately in Settings.": "If you didn't remove the recovery method, an attacker may be trying to access your account. Change your account password and set a new recovery method immediately in Settings.",
     "Failed to set direct chat tag": "Failed to set direct chat tag",
     "Failed to remove tag %(tagName)s from room": "Failed to remove tag %(tagName)s from room",
-    "Failed to add tag %(tagName)s to room": "Failed to add tag %(tagName)s to room",
-    "Encrypted search": "Encrypted search",
-    "Enable event indexing": "Enable event indexing",
-    "To enable search in encrypted rooms, Riot needs to run a background process to download historical messages from those rooms to your computer.": "To enable search in encrypted rooms, Riot needs to run a background process to download historical messages from those rooms to your computer.",
-    "Message disk usage:": "Message disk usage:",
-    "Currently downloading meesages in N rooms": "Currently downloading meesages in N rooms"
+    "Failed to add tag %(tagName)s to room": "Failed to add tag %(tagName)s to room"
 }

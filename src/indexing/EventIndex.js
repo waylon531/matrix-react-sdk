@@ -16,6 +16,8 @@ limitations under the License.
 
 import PlatformPeg from "../PlatformPeg";
 import MatrixClientPeg from "../MatrixClientPeg";
+import SettingsStore from '../settings/SettingsStore';
+import {SettingLevel} from "../settings/SettingsStore";
 
 /*
  * Event indexing class that wraps the platform specific event indexing.
@@ -117,7 +119,9 @@ export default class EventIndex {
             if (eventIndexWasEmpty) await addInitialCheckpoints();
 
             // Start our crawler.
-            this.startCrawler();
+            if (SettingsStore.getValueAt(SettingLevel.DEVICE, 'enableCrawling')) {
+                this.startCrawler();
+            }
             return;
         }
 
@@ -203,7 +207,9 @@ export default class EventIndex {
             // This is a low priority task and we don't want to spam our
             // homeserver with /messages requests so we set a hefty timeout
             // here.
-            await sleep(this._crawlerTimeout);
+            let sleepTime = SettingsStore.getValueAt(SettingLevel.DEVICE, 'crawlerSleepTime');
+            console.log("EventIndex: Crawler sleeping for", sleepTime);
+            await sleep(sleepTime);
 
             console.log("EventIndex: Running the crawler loop.");
 

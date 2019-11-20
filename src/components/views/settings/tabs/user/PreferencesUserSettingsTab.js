@@ -72,7 +72,10 @@ export default class PreferencesUserSettingsTab extends React.Component {
             alwaysShowMenuBarSupported: false,
             minimizeToTray: true,
             minimizeToTraySupported: false,
-            eventIndexingEnabled: false,
+            eventIndexingEnabled:
+                SettingsStore.getValueAt(SettingLevel.DEVICE, 'enableCrawling'),
+            crawlerSleepTime:
+                SettingsStore.getValueAt(SettingLevel.DEVICE, 'crawlerSleepTime'),
             autocompleteDelay:
                 SettingsStore.getValueAt(SettingLevel.DEVICE, 'autocompleteDelay').toString(10),
             readMarkerInViewThresholdMs:
@@ -103,11 +106,6 @@ export default class PreferencesUserSettingsTab extends React.Component {
             minimizeToTray = await platform.getMinimizeToTrayEnabled();
         }
 
-        const eventIndex = EventIndexPeg.get();
-        let eventIndexingEnabled = false;
-
-        if (eventIndex !== null) eventIndexingEnabled = eventIndex.isCrawlerRunning();
-
         this.setState({
             autoLaunch,
             autoLaunchSupported,
@@ -115,7 +113,6 @@ export default class PreferencesUserSettingsTab extends React.Component {
             alwaysShowMenuBar,
             minimizeToTraySupported,
             minimizeToTray,
-            eventIndexingEnabled,
         });
     }
 
@@ -147,9 +144,17 @@ export default class PreferencesUserSettingsTab extends React.Component {
     };
 
     _onEventIndexingEnabledChange = (checked) => {
+        SettingsStore.setValue("enableCrawling", null, SettingLevel.DEVICE, checked);
+
         if (checked) EventIndexPeg.start();
         else EventIndexPeg.stop();
+
         this.setState({eventIndexingEnabled: checked});
+    }
+
+    _onCrawlerSleepTimeChange = (e) => {
+        this.setState({crawlerSleepTime: e.target.value});
+        SettingsStore.setValue("crawlerSleepTime", null, SettingLevel.DEVICE, e.target.value);
     }
 
     _renderGroup(settingIds) {
@@ -203,6 +208,12 @@ export default class PreferencesUserSettingsTab extends React.Component {
                         value={this.state.eventIndexingEnabled}
                         onChange={this._onEventIndexingEnabledChange}
                         label={_t('Enable event indexing')} />
+                    <Field
+                        id={"crawlerSleepTimeMs"}
+                        label={_t('Event inexing download sleep time(ms)')}
+                        type='number'
+                        value={this.state.crawlerSleepTime}
+                        onChange={this._onCrawlerSleepTimeChange} />
                 </div>
             );
         }

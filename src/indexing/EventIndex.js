@@ -26,13 +26,14 @@ import {sleep} from "../utils/promise";
 export default class EventIndex {
     constructor() {
         this.crawlerCheckpoints = [];
-        // The time that the crawler will wait between /rooms/{room_id}/messages
-        // requests
-        this._crawlerTimeout = 3000;
+        // The time in ms that the crawler will wait loop iterations if there
+        // have not been any checkpoints to consume in the last iteration.
+        this._crawlerIdleTime = 5000;
         // The maximum number of events our crawler should fetch in a single
         // crawl.
         this._eventsPerCrawl = 100;
         this._crawler = null;
+        this._currentCheckpoint = null;
         this.liveEventsForIndex = new Set();
     }
 
@@ -198,12 +199,23 @@ export default class EventIndex {
             cancelled = true;
         };
 
+        let idle = false;
+
         while (!cancelled) {
             // This is a low priority task and we don't want to spam our
             // homeserver with /messages requests so we set a hefty timeout
             // here.
             let sleepTime = SettingsStore.getValueAt(SettingLevel.DEVICE, 'crawlerSleepTime');
-            console.log("EventIndex: Crawler sleeping for", sleepTime);
+
+            // Don't let the user configure a lower sleep time than 100 ms.
+            sleepTime = Math.max(sleepTime, 100);
+
+            if (idle) {
+                sleepTime = this._crawlerIdleTime;
+            }
+
+            this._currentCheckpoint = null;
+
             await sleep(sleepTime);
 
             console.log("EventIndex: Running the crawler loop.");
@@ -217,8 +229,13 @@ export default class EventIndex {
             /// There is no checkpoint available currently, one may appear if
             // a sync with limited room timelines happens, so go back to sleep.
             if (checkpoint === undefined) {
+                idle = true;
                 continue;
             }
+
+            this._currentCheckpoint = checkpoint;
+
+            idle = false;
 
             console.log("EventIndex: crawling using checkpoint", checkpoint);
 

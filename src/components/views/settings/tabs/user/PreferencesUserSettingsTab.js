@@ -23,7 +23,8 @@ import SettingsStore from "../../../../../settings/SettingsStore";
 import Field from "../../../elements/Field";
 import sdk from "../../../../..";
 import PlatformPeg from "../../../../../PlatformPeg";
-import EventIndexPeg from "../../../../../EventIndexPeg";
+import EventIndexPeg from "../../../../../indexing/EventIndexPeg";
+import {formatBytes} from "../../../../../utils/FormattingUtils";
 
 export default class PreferencesUserSettingsTab extends React.Component {
     static COMPOSER_SETTINGS = [
@@ -72,6 +73,9 @@ export default class PreferencesUserSettingsTab extends React.Component {
             alwaysShowMenuBarSupported: false,
             minimizeToTray: true,
             minimizeToTraySupported: false,
+            eventIndexSize: 0,
+            crawlingRooms: 0,
+            totalCrawlingRooms: 0,
             eventIndexingEnabled:
                 SettingsStore.getValueAt(SettingLevel.DEVICE, 'enableCrawling'),
             crawlerSleepTime:
@@ -106,6 +110,19 @@ export default class PreferencesUserSettingsTab extends React.Component {
             minimizeToTray = await platform.getMinimizeToTrayEnabled();
         }
 
+        let eventIndexSize = 0;
+        let crawlingRooms = 0;
+        let totalCrawlingRooms = 0;
+
+        let eventIndex = EventIndexPeg.get();
+
+        if (eventIndex !== null) {
+            eventIndexSize = await eventIndex.indexSize();
+            let crawledRooms = eventIndex.currentlyCrawledRooms();
+            crawlingRooms = crawledRooms.crawlingRooms.size;
+            totalCrawlingRooms = crawledRooms.totalRooms.size;
+        }
+
         this.setState({
             autoLaunch,
             autoLaunchSupported,
@@ -113,6 +130,9 @@ export default class PreferencesUserSettingsTab extends React.Component {
             alwaysShowMenuBar,
             minimizeToTraySupported,
             minimizeToTray,
+            eventIndexSize,
+            crawlingRooms,
+            totalCrawlingRooms,
         });
     }
 
@@ -188,6 +208,23 @@ export default class PreferencesUserSettingsTab extends React.Component {
         }
 
         let eventIndexingSettings = null;
+        let crawlerState;
+
+        if (!this.state.eventIndexingEnabled) {
+            crawlerState = <div>{_t("Message downloader is stopped.")}</div>;
+        }
+        else if (this.state.crawlingRooms === 0) {
+            crawlerState = <div>{_t("Message downloader is currently idle.")}</div>;
+        } else {
+            crawlerState = (
+                <div>{_t(
+                    "Currently downloading mesages in %(crawlingRooms)s of %(totalRooms)s rooms.",
+                    { crawlingRooms: this.state.crawlingRooms,
+                      totalRooms: this.state.totalCrawlingRooms,
+                    })}
+                </div>
+            );
+        }
 
         if (EventIndexPeg.get() !== null) {
             eventIndexingSettings = (
@@ -200,17 +237,18 @@ export default class PreferencesUserSettingsTab extends React.Component {
                         )
                     }
                     <div className='mx_SettingsTab_subsectionText'>
-                        {_t("Message disk usage:")} "10MB"<br />
-                        {_t("Currently downloading meesages in N rooms")}<br />
+                        {_t("Message disk usage:")} {formatBytes(this.state.eventIndexSize, 0)}<br />
+                        {crawlerState}<br />
                     </div>
 
                     <LabelledToggleSwitch
                         value={this.state.eventIndexingEnabled}
                         onChange={this._onEventIndexingEnabledChange}
-                        label={_t('Enable event indexing')} />
+                        label={_t('Enable message downloading')} />
+
                     <Field
                         id={"crawlerSleepTimeMs"}
-                        label={_t('Event inexing download sleep time(ms)')}
+                        label={_t('Message downloading sleep time(ms)')}
                         type='number'
                         value={this.state.crawlerSleepTime}
                         onChange={this._onCrawlerSleepTimeChange} />

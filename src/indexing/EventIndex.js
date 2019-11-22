@@ -397,7 +397,7 @@ export default class EventIndex {
     }
 
     isCrawlerRunning() {
-        if (this._crawlerRef === null) return false;
+        if (this._crawler === null) return false;
         else return true;
     }
 

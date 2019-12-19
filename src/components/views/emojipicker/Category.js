@@ -36,7 +36,7 @@ class Category extends React.PureComponent {
         const { onClick, onMouseEnter, onMouseLeave, selectedEmojis, emojis } = this.props;
         const emojisForRow = emojis.slice(rowIndex * 8, (rowIndex + 1) * 8);
         const Emoji = sdk.getComponent("emojipicker.Emoji");
-        return (<div key={rowIndex}>{
+        return (<div key={rowIndex} role="row">{
             emojisForRow.map(emoji =>
                 <Emoji key={emoji.hexcode} emoji={emoji} selectedEmojis={selectedEmojis}
                     onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />)
@@ -67,13 +67,15 @@ class Category extends React.PureComponent {
         const localScrollTop = Math.max(0, scrollTop - listTop);
 
         return (
-            <section className="mx_EmojiPicker_category" data-category-id={this.props.id}>
-                <h2 className="mx_EmojiPicker_category_label">
+            <section className="mx_EmojiPicker_category" data-category-id={this.props.id} role="rowgroup" aria-label={name}>
+                <h2 className="mx_EmojiPicker_category_label" role="presentation">
                     {name}
                 </h2>
                 <LazyRenderList
-                    element="ul" className="mx_EmojiPicker_list"
-                    itemHeight={EMOJI_HEIGHT} items={rows}
+                    element="ul"
+                    className="mx_EmojiPicker_list"
+                    itemHeight={EMOJI_HEIGHT}
+                    items={rows}
                     scrollTop={localScrollTop}
                     height={localHeight}
                     overflowItems={OVERFLOW_ROWS}

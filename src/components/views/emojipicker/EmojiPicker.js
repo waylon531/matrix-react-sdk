@@ -22,6 +22,7 @@ import sdk from '../../../index';
 import { _t } from '../../../languageHandler';
 
 import * as recent from './recent';
+import {Key} from "../../../Keyboard";
 
 const EMOJIBASE_CATEGORY_IDS = [
     "people", // smileys
@@ -68,6 +69,15 @@ EMOJIBASE.forEach(emoji => {
 export const CATEGORY_HEADER_HEIGHT = 22;
 export const EMOJI_HEIGHT = 37;
 export const EMOJIS_PER_ROW = 8;
+
+const countPreviousSiblings = (el) => {
+    let count = 0;
+    while (el.previousSibling) {
+        el = el.previousSibling;
+        count++;
+    }
+    return count;
+};
 
 class EmojiPicker extends React.Component {
     static propTypes = {
@@ -173,6 +183,68 @@ class EmojiPicker extends React.Component {
         this.updateVisibility();
     };
 
+    onBodyKeyDown = (ev) => {
+        const el = ev.target.parentElement;
+
+        let handled = true;
+
+        switch (ev.key) {
+            case Key.ARROW_LEFT:
+                if (el.previousSibling) {
+                    el.previousSibling.firstChild.focus();
+                } else {
+                    const prevRow = el.parentElement.previousSibling;
+                    if (prevRow) {
+                        prevRow.firstChild.firstChild.focus();
+                    } else {
+                        // TODO focus search box again as we are at the top
+                    }
+                }
+                break;
+            case Key.ARROW_RIGHT:
+                if (el.nextSibling) {
+                    el.nextSibling.firstChild.focus();
+                } else {
+                    const nextRow = el.parentElement.nextSibling;
+                    if (nextRow) {
+                        nextRow.firstChild.firstChild.focus();
+                    } else {
+                        // TODO something
+                    }
+                }
+                break;
+            case Key.ARROW_UP:
+                {
+                    const prevRow = el.parentElement.previousSibling;
+                    if (prevRow) {
+                        const offset = countPreviousSiblings(el);
+                        prevRow.children[Math.min(offset, prevRow.children.length - 1)].firstChild.focus();
+                    } else {
+                        // TODO focus search box again as we are at the top
+                    }
+                }
+                break;
+            case Key.ARROW_DOWN:
+                {
+                    const nextRow = el.parentElement.nextSibling;
+                    if (nextRow) {
+                        const offset = countPreviousSiblings(el);
+                        nextRow.children[Math.min(offset, nextRow.children.length - 1)].firstChild.focus();
+                    } else {
+                        // TODO something
+                    }
+                }
+                break;
+            default:
+                handled = false;
+        }
+
+        if (handled) {
+            ev.stopPropagation();
+            ev.preventDefault();
+        }
+    };
+
     updateVisibility() {
         const body = this.bodyRef.current;
         const rect = body.getBoundingClientRect();
@@ -255,10 +327,17 @@ class EmojiPicker extends React.Component {
         const QuickReactions = sdk.getComponent("emojipicker.QuickReactions");
         let heightBefore = 0;
         return (
-            <div className="mx_EmojiPicker">
+            <div className="mx_EmojiPicker" role="dialog" aria-modal={true}>
                 <Header categories={this.categories} defaultCategory="recent" onAnchorClick={this.scrollToCategory} />
                 <Search query={this.state.filter} onChange={this.onChangeFilter} />
-                <div className="mx_EmojiPicker_body" ref={this.bodyRef} onScroll={this.onScroll}>
+                <div
+                    className="mx_EmojiPicker_body"
+                    ref={this.bodyRef}
+                    onScroll={this.onScroll}
+                    onKeyDown={this.onBodyKeyDown}
+                    role="grid"
+                    aria-multiselectable={this.props.selectedEmojis !== undefined}
+                >
                     {this.categories.map(category => {
                         const emojis = this.memoizedDataByCategory[category.id];
                         const categoryElement = (<Category key={category.id} id={category.id} name={category.name}

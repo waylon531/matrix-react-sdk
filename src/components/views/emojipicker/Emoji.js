@@ -16,6 +16,7 @@ limitations under the License.
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import sdk from "../../../index";
 
 class Emoji extends React.PureComponent {
     static propTypes = {
@@ -29,14 +30,19 @@ class Emoji extends React.PureComponent {
     render() {
         const { onClick, onMouseEnter, onMouseLeave, emoji, selectedEmojis } = this.props;
         const isSelected = selectedEmojis && selectedEmojis.has(emoji.unicode);
+        const AccessibleButton = sdk.getComponent("elements.AccessibleButton");
         return (
-            <li onClick={() => onClick(emoji)}
-                onMouseEnter={() => onMouseEnter(emoji)}
-                onMouseLeave={() => onMouseLeave(emoji)}
-                className="mx_EmojiPicker_item_wrapper">
-                <div className={`mx_EmojiPicker_item ${isSelected ? 'mx_EmojiPicker_item_selected' : ''}`}>
+            <li className="mx_EmojiPicker_item_wrapper" role="gridcell">
+                <AccessibleButton
+                    className={`mx_EmojiPicker_item ${isSelected ? 'mx_EmojiPicker_item_selected' : ''}`}
+                    onClick={() => onClick(emoji)}
+                    onMouseEnter={() => onMouseEnter(emoji)}
+                    onMouseLeave={() => onMouseLeave(emoji)}
+                    aria-pressed={selectedEmojis ? isSelected : undefined}
+                    // tabIndex={-1}
+                >
                     {emoji.unicode}
-                </div>
+                </AccessibleButton>
             </li>
         );
     }

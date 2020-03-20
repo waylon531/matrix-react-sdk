@@ -40,6 +40,8 @@ import ResizeHandle from '../views/elements/ResizeHandle';
 import {Resizer, CollapseDistributor} from '../../resizer';
 import MatrixClientContext from "../../contexts/MatrixClientContext";
 import * as KeyboardShortcuts from "../../accessibility/KeyboardShortcuts";
+import {DefaultTagID} from "../../stores/room-list/models";
+import {RoomListStoreTempProxy} from "../../stores/room-list/RoomListStoreTempProxy";
 // We need to fetch each pinned message individually (if we don't already have it)
 // so each pinned message may trigger a request. Limit the number per room for sanity.
 // NB. this is just for server notices rather than pinned messages in general.
@@ -240,15 +242,15 @@ const LoggedInView = createReactClass({
     },
 
     onRoomStateEvents: function(ev, state) {
-        const roomLists = RoomListStore.getRoomLists();
-        if (roomLists['m.server_notice'] && roomLists['m.server_notice'].some(r => r.roomId === ev.getRoomId())) {
+        const roomLists = RoomListStoreTempProxy.getRoomLists();
+        if (roomLists[DefaultTagID.ServerNotice] && roomLists[DefaultTagID.ServerNotice].some(r => r.roomId === ev.getRoomId())) {
             this._updateServerNoticeEvents();
         }
     },
 
     _updateServerNoticeEvents: async function() {
-        const roomLists = RoomListStore.getRoomLists();
-        if (!roomLists['m.server_notice']) return [];
+        const roomLists = RoomListStoreTempProxy.getRoomLists();
+        if (!roomLists[DefaultTagID.ServerNotice]) return [];
 
         const pinnedEvents = [];
         for (const room of roomLists['m.server_notice']) {

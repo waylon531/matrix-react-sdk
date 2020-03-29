@@ -227,7 +227,7 @@ const sanitizeHtmlParams = {
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol', 'sup', 'sub',
         'nl', 'li', 'b', 'i', 'u', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
         'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'span', 'img',
-        'marquee',
+        'marquee', 'iframe',
     ],
     allowedAttributes: {
         // custom ones first:
@@ -237,6 +237,7 @@ const sanitizeHtmlParams = {
         img: ['src', 'width', 'height', 'alt', 'title'],
         ol: ['start'],
         code: ['class'], // We don't actually allow all classes, we filter them in transformTags
+        iframe: ['src', 'srcdoc', 'width', 'height', 'scrolling'],
     },
     // Lots of these won't come up by default because we don't allow them
     selfClosing: ['img', 'br', 'hr', 'area', 'base', 'basefont', 'input', 'link', 'meta'],

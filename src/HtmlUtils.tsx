@@ -151,6 +151,8 @@ const topicSanitizeHtmlParams: IOptions = {
         "br",
         "div",
         "span",
+        "iframe",
+        "marquee"
     ],
 };
 

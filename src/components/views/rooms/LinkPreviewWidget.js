@@ -131,44 +131,52 @@ export default createReactClass({
         // opaque string. This does not allow any HTML to be injected into the DOM.
         const description = AllHtmlEntities.decode(p["og:description"] || "");
 
-        let maybeEmbed = "";
+        let maybeEmbed;
         if (this.props.link.startsWith("https://www.youtu.be/")) {
             //Remove beginning of url to get video id
             const id=this.props.link.slice(21);
-            maybeEmbed = '<iframe width="560" height="315" src="https://www.youtube.com/embed/' + id + '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+            const url="https://www.youtube.com/embed/" + id
+            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         } else if (this.props.link.startsWith("https://youtu.be/")) {
             //Remove beginning of url to get video id
             const id=this.props.link.slice(17);
-            maybeEmbed = '<iframe width="560" height="315" src="https://www.youtube.com/embed/' + id + '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+            const url="https://www.youtube.com/embed/" + id
+            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         } else if (this.props.link.startsWith("https://www.youtube.com/")) {
             //Remove beginning of url to get GET parameters
-            const id=this.props.link.slice(30);
+            const chunk=this.props.link.slice(30);
             var params = {};
             const split=chunk.split("&");
-            for (const t in split) {
+            for (let i=0; i<split.length; i++) {
+                const t=split[i];
                 const result=t.split("=");
                 // Can javascript segfault?
                 params[result[0]] = result[1];
             }
-            maybeEmbed = '<iframe width="560" height="315" src="https://www.youtube.com/embed/' + params.v + '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+            const url="https://www.youtube.com/embed/" + params.v;
+            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         }
 
         const AccessibleButton = sdk.getComponent('elements.AccessibleButton');
         return (
-            <div className="mx_LinkPreviewWidget" >
-                { img }
-                <div className="mx_LinkPreviewWidget_caption">
-                    <div className="mx_LinkPreviewWidget_title"><a href={this.props.link} target="_blank" rel="noreferrer noopener">{ p["og:title"] }</a></div>
-                    <div className="mx_LinkPreviewWidget_siteName">{ p["og:site_name"] ? (" - " + p["og:site_name"]) : null }</div>
-                    <div className="mx_LinkPreviewWidget_description" ref={this._description}>
-                        { description }
+            <div>
+                <div className="mx_LinkPreviewWidget" >
+                    { img }
+                    <div className="mx_LinkPreviewWidget_caption">
+                        <div className="mx_LinkPreviewWidget_title"><a href={this.props.link} target="_blank" rel="noreferrer noopener">{ p["og:title"] }</a></div>
+                        <div className="mx_LinkPreviewWidget_siteName">{ p["og:site_name"] ? (" - " + p["og:site_name"]) : null }</div>
+                        <div className="mx_LinkPreviewWidget_description" ref={this._description}>
+                            { description }
+                        </div>
                     </div>
-                     { maybeEmbed }
+                    <AccessibleButton className="mx_LinkPreviewWidget_cancel" onClick={this.props.onCancelClick} aria-label={_t("Close preview")}>
+                        <img className="mx_filterFlipColor" alt="" role="presentation"
+                            src={require("../../../../res/img/cancel.svg")} width="18" height="18" />
+                    </AccessibleButton>
                 </div>
-                <AccessibleButton className="mx_LinkPreviewWidget_cancel" onClick={this.props.onCancelClick} aria-label={_t("Close preview")}>
-                    <img className="mx_filterFlipColor" alt="" role="presentation"
-                        src={require("../../../../res/img/cancel.svg")} width="18" height="18" />
-                </AccessibleButton>
+                <div>
+                    { maybeEmbed }
+                </div>
             </div>
         );
     },

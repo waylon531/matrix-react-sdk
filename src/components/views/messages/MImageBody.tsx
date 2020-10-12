@@ -143,6 +143,7 @@ export class MImageBodyInner extends React.Component<IProps, IState> {
     };
 
     private get shouldAutoplay(): boolean {
+        return true
         return !(
             !this.state.contentUrl ||
             !this.props.mediaVisible ||

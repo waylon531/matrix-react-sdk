@@ -129,22 +129,12 @@ export default class MImageBody extends React.Component {
 
     onImageEnter(e) {
         this.setState({ hover: true });
-
-        if (!this.state.showImage || !this._isGif() || SettingsStore.getValue("autoplayGifsAndVideos")) {
-            return;
-        }
-        const imgElement = e.target;
-        imgElement.src = this._getContentUrl();
+        return;
     }
 
     onImageLeave(e) {
         this.setState({ hover: false });
-
-        if (!this.state.showImage || !this._isGif() || SettingsStore.getValue("autoplayGifsAndVideos")) {
-            return;
-        }
-        const imgElement = e.target;
-        imgElement.src = this._getThumbUrl();
+        return;
     }
 
     onImageError() {
@@ -400,9 +390,9 @@ export default class MImageBody extends React.Component {
             showPlaceholder = false; // because we're hiding the image, so don't show the sticker icon.
         }
 
-        if (this._isGif() && !SettingsStore.getValue("autoplayGifsAndVideos") && !this.state.hover) {
-            gifLabel = <p className="mx_MImageBody_gifLabel">GIF</p>;
-        }
+        //if (this._isGif() && !SettingsStore.getValue("autoplayGifsAndVideos") && !this.state.hover) {
+        //    gifLabel = <p className="mx_MImageBody_gifLabel">GIF</p>;
+        //}
 
         const thumbnail = (
             <div className="mx_MImageBody_thumbnail_container" style={{ maxHeight: maxHeight + "px" }} >
@@ -468,7 +458,7 @@ export default class MImageBody extends React.Component {
 
         const contentUrl = this._getContentUrl();
         let thumbUrl;
-        if (this._isGif() && SettingsStore.getValue("autoplayGifsAndVideos")) {
+        if (this._isGif()) {
           thumbUrl = contentUrl;
         } else {
           thumbUrl = this._getThumbUrl();

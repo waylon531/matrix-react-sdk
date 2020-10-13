@@ -155,6 +155,19 @@ export default createReactClass({
             }
             const url="https://www.youtube.com/embed/" + params.v;
             maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        } else if (this.props.link.startsWith("https://youtube.com/")) {
+            //Remove beginning of url to get GET parameters
+            const chunk=this.props.link.slice(26);
+            var params = {};
+            const split=chunk.split("&");
+            for (let i=0; i<split.length; i++) {
+                const t=split[i];
+                const result=t.split("=");
+                // Can javascript segfault?
+                params[result[0]] = result[1];
+            }
+            const url="https://www.youtube.com/embed/" + params.v;
+            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         }
 
         const AccessibleButton = sdk.getComponent('elements.AccessibleButton');

@@ -16,6 +16,7 @@ limitations under the License.
 */
 
 import Markdown from '../Markdown';
+import marked from 'marked';
 import {makeGenericPermalink} from "../utils/permalinks/Permalinks";
 
 export function mdSerialize(model) {
@@ -35,11 +36,14 @@ export function mdSerialize(model) {
     }, "");
 }
 
+//XXX: Modify this for custom html serialization
 export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
     const md = mdSerialize(model);
-    const parser = new Markdown(md);
-    if (!parser.isPlainText() || forceHTML) {
-        return parser.toHTML();
+    const parsed = marked(md);
+    // Check to see if the plaintext and rendered text would be the same
+    if (parsed != md || forceHTML) {
+        //return parser.toHTML();
+        return parsed;
     }
 }
 

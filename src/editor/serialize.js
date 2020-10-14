@@ -17,6 +17,7 @@ limitations under the License.
 
 import Markdown from '../Markdown';
 import marked from 'marked';
+import { parse, HtmlGenerator } from 'latex.js'
 import {makeGenericPermalink} from "../utils/permalinks/Permalinks";
 
 export function mdSerialize(model) {
@@ -36,14 +37,18 @@ export function mdSerialize(model) {
     }, "");
 }
 
-//XXX: Modify this for custom html serialization
 export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
     const md = mdSerialize(model);
+
     const parsed = marked(md);
+    // This doesn't have the <p> tag or anything at the end
+    // Useful for checking for noops
+    const parsedInline = marked.parseInline(md);
+
     // Check to see if the plaintext and rendered text would be the same
-    if (parsed != md || forceHTML) {
+    if (true || parsedInline != md || forceHTML ) {
         //return parser.toHTML();
-        return parsed;
+        return parsedInline;
     }
 }
 

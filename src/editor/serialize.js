@@ -17,7 +17,7 @@ limitations under the License.
 
 import Markdown from '../Markdown';
 import marked from 'marked';
-import { parse, HtmlGenerator } from 'latex.js'
+//import { parse, HtmlGenerator } from 'latex.js'
 import {makeGenericPermalink} from "../utils/permalinks/Permalinks";
 
 export function mdSerialize(model) {
@@ -40,16 +40,31 @@ export function mdSerialize(model) {
 export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
     const md = mdSerialize(model);
 
-    const parsed = marked(md);
+    let parsed = marked(md);
     // This doesn't have the <p> tag or anything at the end
     // Useful for checking for noops
-    const parsedInline = marked.parseInline(md);
+    // const parsedInline = marked.parseInline(md);
+
+    // TODO: this is bad, I don't want to parse the whole thing,
+    // just chunks in $$
+    // let generator = new HtmlGenerator({ hyphenate: false });
+    // let doc = parse(latex, { generator: generator }).htmlDocument()
 
     // Check to see if the plaintext and rendered text would be the same
-    if (true || parsedInline != md || forceHTML ) {
+    //if (true || parsedInline != md || forceHTML ) {
         //return parser.toHTML();
-        return parsedInline;
+
+    //Trim out the trailing newline
+    parsed = parsed.slice(0,-1);
+    
+    //Trim out the <p> tags that surround text messages
+    //These fuck up the display of emojis
+    if (parsed.startsWith("<p>") && parsed.endsWith("</p>")) {
+        parsed = parsed.slice(3).slice(0,-4);
     }
+
+    return parsed;
+    //}
 }
 
 export function textSerialize(model) {

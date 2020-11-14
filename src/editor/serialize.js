@@ -38,6 +38,81 @@ export function mdSerialize(model) {
     }, "");
 }
 
+function emojify(name) {
+    switch(name) {
+        case "markchamp": 
+            return "mxc://typ3.tech/HqGFPAwmDOfLtlRNrdiajlQq";
+        case "forkyou":
+            return "mxc://typ3.tech/NjrJKwtQERogKRQqsLDcUBEA";
+        case "666":
+            return "mxc://typ3.tech/qceNXxqhMkrPRqSqbWLkaLDm";
+        case "zoom-eyes":
+            return "mxc://typ3.tech/cuWvHgURiYyPxRezAJLAnwiB";
+        case "rip":
+            return "mxc://typ3.tech/gdELiyxcqEksxVEGlXYBiSWs";
+        case "neutralandroid":
+            return "mxc://typ3.tech/OwpmniSTDAKFASHqQrYbJAqs";
+        case "senpaineutral":
+            return "mxc://typ3.tech/ASWDxAnsWBbnsngnzKFpryYp";
+        case "thinkingchief":
+            return "mxc://typ3.tech/ADdxzZiJJMJEnOyPvzpvGsLd";
+        case "thinkingdeusvult":
+            return "mxc://typ3.tech/biPDzxqUxHQNwPMCXncmXSNb";
+        case "thinkingdrops":
+            return "mxc://typ3.tech/hQVZeDyvTkCrpbwYqmpUrItw";
+        case "thinkingeggplant":
+            return "mxc://typ3.tech/evLBGumbhUEvmEoyLqBXLhVC";
+        case "thinkingferrous":
+            return "mxc://typ3.tech/IrVOHgccLMWFjjlZpgFGVZtr";
+        case "thinkinggun":
+            return "mxc://typ3.tech/HLdRAPrNGXQWbRTeDAhlJfmb";
+        case "thinkinggun2":
+            return "mxc://typ3.tech/zlnyBMETtUGOEpbGVVjycYmR";
+        case "thinkinglenny":
+            return "mxc://typ3.tech/LzBxmfjNWJbQriaUqSIPTIcr";
+        case "thinkingmeta":
+            return "mxc://typ3.tech/TDnixjPRMGpfGIYkykKQXiRO";
+        case "thinkingnoose":
+            return "mxc://typ3.tech/xJkfyGSVdVICEwernczDWUco";
+        case "thinkingok":
+            return "mxc://typ3.tech/UMWNcrJCETzDyEKBBozsiRCn";
+        case "thinkingpixel":
+            return "mxc://typ3.tech/PdvFExWcFYbUqesolHUssgTJ";
+        case "thinkingrage":
+            return "mxc://typ3.tech/OqjfucUmhmuZWOXuipzlPlSI";
+        case "thinkingsatchel":
+            return "mxc://typ3.tech/PSGjQmJEOylNsfyPGoahgjUh";
+        case "thinkingscratch":
+            return "mxc://typ3.tech/PSFFsqGGkxJXLxLZgfFkImTQ";
+        case "thinkingshrug":
+            return "mxc://typ3.tech/zrboRNATrHWiMzXekCOYVnzB";
+        case "thinkingsmile":
+            return "mxc://typ3.tech/ErKlbesQRAlmvgMJCigzOMIa";
+        case "thinkingsmug":
+            return "mxc://typ3.tech/AZOfOtyTfGsJMzKJJskfLHSM";
+        case "thinkingspinner":
+            return "mxc://typ3.tech/mGQFIRibzFwYRMvsqMVnPSkl";
+        case "thinkingalien":
+            return "mxc://typ3.tech/rosoXBJwMUoAUNcOvdUCcNbU";
+        case "thinkingandroid":
+            return "mxc://typ3.tech/ADDzJhzyRqzsZEUZaJDTlHqM";
+        case "thinkingbugeye":
+            return "mxc://typ3.tech/OJAiuknktYFXkurVIxCGQnzv";
+        case "thinkingcat":
+            return "mxc://typ3.tech/EdPAlvKkAGwrNwHWpSMkfEOY";
+        case "thinkingcloud":
+            return "mxc://typ3.tech/KAGhemdIzQLRQLLdswuKPTUO";
+        case "no-u":
+            return "mxc://typ3.tech/qdhTAqsRqpbQgRJKdpYYrmZX";
+        case "whomst":
+            return "mxc://typ3.tech/jGlWUdjThEWDhHQsvWINBOmn";
+        case "rpi":
+            return "mxc://typ3.tech/fKwIExHbitoRyYyaGcMKutxQ";
+        default:
+            return null;
+    }
+}
+
 export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
     var md = mdSerialize(model);
 
@@ -68,6 +143,22 @@ export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
     if (parsed.startsWith("<p>") && parsed.endsWith("</p>")) {
         parsed = parsed.slice(3).slice(0,-4);
     }
+
+    //Now, turn all emoji :blocks: into emojis
+    chunks = parsed.split(" ");
+
+    for(var i=0; i<chunks.length; i++) {
+        // If there's a space it's not an emoji block
+        // and make sure it starts and ends with a :
+        if (!chunks[i].includes(" ") && chunks[i].startsWith(":") && chunks[i].endsWith(":")) {
+            // trim out those ':'s
+            var t = chunks[i].slice(1,-1);
+            if (emojify(t) !== null) {
+                chunks[i] = "<img src=\"" + emojify(t) + "\" alt=\"" + t + "\" height=32 />"
+            }
+        }
+    }
+    parsed = chunks.join(" ");
 
     return parsed;
     //}

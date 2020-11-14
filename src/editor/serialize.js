@@ -17,6 +17,7 @@ limitations under the License.
 
 import Markdown from '../Markdown';
 import marked from 'marked';
+import katex from 'katex';
 //import { parse, HtmlGenerator } from 'latex.js'
 import {makeGenericPermalink} from "../utils/permalinks/Permalinks";
 
@@ -38,21 +39,26 @@ export function mdSerialize(model) {
 }
 
 export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
-    const md = mdSerialize(model);
+    var md = mdSerialize(model);
+
+    var chunks = md.split("$$");
+    // Check if there's enough $$ to actually do something
+    if (chunks.length > 2) {
+        // Go through all the odd numbered chunks
+        // These are the ones in the interiors of the $$s
+        for (var i=1; i<chunks.length; i+=2) {
+            // Render each chunk with katex
+            chunks[i] = katex.renderToString(chunks[i], {throwOnError: false, output: "html"});
+        }
+        md = chunks.join('');
+    }
+
 
     let parsed = marked(md);
     // This doesn't have the <p> tag or anything at the end
     // Useful for checking for noops
     // const parsedInline = marked.parseInline(md);
-
-    // TODO: this is bad, I don't want to parse the whole thing,
-    // just chunks in $$
-    // let generator = new HtmlGenerator({ hyphenate: false });
-    // let doc = parse(latex, { generator: generator }).htmlDocument()
-
-    // Check to see if the plaintext and rendered text would be the same
-    //if (true || parsedInline != md || forceHTML ) {
-        //return parser.toHTML();
+    // Turns out it doesn't render quotes or lists though fml
 
     //Trim out the trailing newline
     parsed = parsed.slice(0,-1);

@@ -227,19 +227,19 @@ const sanitizeHtmlParams = {
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol', 'sup', 'sub',
         'nl', 'li', 'b', 'i', 'u', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
         'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'span', 'img',
-        'marquee', 'iframe', 'script', 'head', 'body', 'solid', 'pic', 'vid',
-        'sound', 'card', 'tile',
+        'marquee', 'iframe', 'head', 'body', 'solid', 'pic', 'vid', 'sound', 'card', 'tile',
     ],
     allowedAttributes: {
         // custom ones first:
         font: ['color', 'data-mx-bg-color', 'data-mx-color', 'style'], // custom to matrix
-        span: ['data-mx-bg-color', 'data-mx-color', 'data-mx-spoiler', 'style'], // custom to matrix
+        span: ['data-mx-bg-color', 'data-mx-color', 'data-mx-spoiler', 'style', 'class', 'aria-hidden'], 
         a: ['href', 'name', 'target', 'rel'], // remote target: custom to matrix
         img: ['src', 'width', 'height', 'alt', 'title'],
         ol: ['start'],
         code: ['class'], // We don't actually allow all classes, we filter them in transformTags
         iframe: ['src', 'srcdoc', 'width', 'height', 'scrolling'],
-        script: ['src'],
+        marquee: ['behavior', 'bgcolor', 'direction', 'height', 'hspace', 'loop', 'scrolldelay', 
+            'scrollamount', 'truespeed', 'vspace', 'width'],
         solid: ['color'],
         hr: ['time', 'pop'],
         p: ['color', 'mute'],

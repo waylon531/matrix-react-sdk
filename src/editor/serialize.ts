@@ -17,6 +17,21 @@ import SettingsStore from "../settings/SettingsStore";
 import SdkConfig from "../SdkConfig";
 import { Type } from "./parts";
 
+// TODO: collate with actual emojis somehow
+function emojify(name: string) : string | null {
+    switch(name) {
+        case "hungy":
+            return "mxc://riot.firechicken.net/lZIBSAhTiJYdraAhXQKktEIO";
+        case "frogstamp":
+            return "mxc://riot.firechicken.net/hbqdSuvrIkJmPntAwGWOlBTk";
+        case "rollsafe":
+            return "mxc://riot.firechicken.net/GLBlUvmfFCyDSKVolgaVXOPu";
+        default:
+            return null;
+    }
+}
+
+
 export function mdSerialize(model: EditorModel): string {
     return model.parts.reduce((html, part) => {
         switch (part.type) {
@@ -155,7 +170,37 @@ export function htmlSerializeFromMdIfNeeded(md: string, { forceHTML = false } = 
                 }
             });
         }
-        return phtml.body.innerHTML;
+
+        let html: string = phtml.body.innerHTML;
+
+        html = html.slice(0,-1);
+
+        //Trim out the <p> tags that surround text messages
+        //These fuck up the display of emojis
+        if (html.startsWith("<p>") && html.endsWith("</p>")) {
+            html = html.slice(3).slice(0,-4);
+        }
+
+        //Now, turn all emoji :blocks: into emojis
+        let chunks = html.split(" ");
+
+        for(let i=0; i<chunks.length; i++) {
+            // If there's a space it's not an emoji block
+            // and make sure it starts and ends with a :
+            if ((!chunks[i].includes(" ")) && chunks[i].startsWith(":") && chunks[i].endsWith(":")) {
+                 // trim out those ':'s
+                 const t = chunks[i].slice(1,-1);
+                 if (emojify(t) !== null) {
+                     chunks[i] = "<img src=\"" + emojify(t) + "\" alt=\":" + t + ":\" title=\":" + t + ":\" height=32 />"
+                 }
+            }
+        }
+        html = chunks.join(" ");
+
+        return html;
+
+
+
     }
     // ensure removal of escape backslashes in non-Markdown messages
     if (md.indexOf("\\") > -1) {

@@ -131,20 +131,42 @@ export default createReactClass({
         // opaque string. This does not allow any HTML to be injected into the DOM.
         const description = AllHtmlEntities.decode(p["og:description"] || "");
 
+        // How global are js variables?
         let maybeEmbed;
-        if (this.props.link.startsWith("https://www.youtu.be/")) {
+        let id=null;
+        // Short links are handled differently than long links
+        if (this.props.link.startsWith("https://youtu.be/"))  {
             //Remove beginning of url to get video id
-            const id=this.props.link.slice(21);
-            const url="https://www.youtube.com/embed/" + id
-            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        } else if (this.props.link.startsWith("https://youtu.be/")) {
-            //Remove beginning of url to get video id
-            const id=this.props.link.slice(17);
-            const url="https://www.youtube.com/embed/" + id
-            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        } else if (this.props.link.startsWith("https://www.youtube.com/")) {
+            const tail = this.props.link.slice(17);
+            var part = tail.split("?");
+            if (part.length == 2) {
+                var split=part[1].split("&");
+                var params = {};
+                for (let i=0; i<split.length; i++) {
+                    const t=split[i];
+                    const result=t.split("=");
+                    // Can javascript segfault?
+                    params[result[0]] = result[1];
+                }
+                // Add in the start time if it exists
+                if (params.t !== null) {
+                    id = part[0] + "?start=" + params.t;
+                } else {
+                    id = part[0];
+                }
+            } else {
+                // In this case there's no extra GET parameters
+                id = tail;
+            }
+        } else if (this.props.link.startsWith("https://www.youtube.com/watch") 
+                || this.props.link.startsWith("https://youtube.com/watch")) {
             //Remove beginning of url to get GET parameters
-            const chunk=this.props.link.slice(30);
+            var chunk;
+            if (this.props.link.startsWith("https://www.youtube.com/watch")) {
+                chunk=this.props.link.slice(30);
+            } else {
+                chunk=this.props.link.slice(26);
+            }
             var params = {};
             const split=chunk.split("&");
             for (let i=0; i<split.length; i++) {
@@ -153,21 +175,18 @@ export default createReactClass({
                 // Can javascript segfault?
                 params[result[0]] = result[1];
             }
-            const url="https://www.youtube.com/embed/" + params.v;
-            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        } else if (this.props.link.startsWith("https://youtube.com/")) {
-            //Remove beginning of url to get GET parameters
-            const chunk=this.props.link.slice(26);
-            var params = {};
-            const split=chunk.split("&");
-            for (let i=0; i<split.length; i++) {
-                const t=split[i];
-                const result=t.split("=");
-                // Can javascript segfault?
-                params[result[0]] = result[1];
+            // Add in the start time if it exists
+            if (params.t !== null) {
+                id = params.v + "?start=" + params.t;
+            } else {
+                id = params.v;
             }
-            const url="https://www.youtube.com/embed/" + params.v;
-            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        }
+
+        if (id != null) {
+            const url="https://www.youtube.com/embed/" + id
+            maybeEmbed = <iframe width="560" height="315" src={url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
+
         }
 
         const AccessibleButton = sdk.getComponent('elements.AccessibleButton');

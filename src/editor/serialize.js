@@ -38,6 +38,7 @@ export function mdSerialize(model) {
     }, "");
 }
 
+// TODO: collate with actual emojis somehow
 function emojify(name) {
     switch(name) {
         case "markchamp": 
@@ -108,6 +109,8 @@ function emojify(name) {
             return "mxc://typ3.tech/jGlWUdjThEWDhHQsvWINBOmn";
         case "rpi":
             return "mxc://typ3.tech/fKwIExHbitoRyYyaGcMKutxQ";
+        case "hungy":
+            return "mxc://riot.firechicken.net/lZIBSAhTiJYdraAhXQKktEIO";
         default:
             return null;
     }
@@ -154,7 +157,7 @@ export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
             // trim out those ':'s
             var t = chunks[i].slice(1,-1);
             if (emojify(t) !== null) {
-                chunks[i] = "<img src=\"" + emojify(t) + "\" alt=\"" + t + "\" height=32 />"
+                chunks[i] = "<img src=\"" + emojify(t) + "\" alt=\":" + t + ":\" title=\":" + t + ":\" height=32 />"
             }
         }
     }

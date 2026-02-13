@@ -169,6 +169,8 @@ export const sanitizeHtmlParams: IOptions = {
         "img",
         "details",
         "summary",
+        "iframe",
+        "marquee"
     ],
     allowedAttributes: {
         // attribute sanitization happens after transformations, so we have to accept `style` for font, span & img
@@ -182,7 +184,10 @@ export const sanitizeHtmlParams: IOptions = {
         img: ["src", "alt", "title", "style"],
         ol: ["start"],
         code: ["class"], // We don't actually allow all classes, we filter them in transformTags
+        marquee: ["*"],
+        iframe: ["*"]
     },
+    allowedIframeHostnames: ['www.youtube.com'],
     // Lots of these won't come up by default because we don't allow them
     selfClosing: ["img", "br", "hr", "area", "base", "basefont", "input", "link", "meta"],
     // URL schemes we permit

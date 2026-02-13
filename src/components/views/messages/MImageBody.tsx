@@ -498,7 +498,7 @@ export class MImageBodyInner extends React.Component<IProps, IState> {
         const hoverOrFocus = this.state.hover || this.state.focus;
         if (thumbUrl && !this.state.imgError) {
             let url = thumbUrl;
-            if (hoverOrFocus && this.shouldAutoplay) {
+            if (this.shouldAutoplay) {
                 url = this.state.contentUrl!;
             }
 
@@ -530,12 +530,13 @@ export class MImageBodyInner extends React.Component<IProps, IState> {
             showPlaceholder = false; // because we're hiding the image, so don't show the placeholder.
         }
 
-        if (this.state.isAnimated && !SettingsStore.getValue("autoplayGifs") && !hoverOrFocus) {
-            // XXX: Arguably we may want a different label when the animated image is WEBP and not GIF
-            gifLabel = <p className="mx_MImageBody_gifLabel">GIF</p>;
-        }
+        //if (this.state.isAnimated && !SettingsStore.getValue("autoplayGifs") && !hoverOrFocus) {
+        //    // XXX: Arguably we may want a different label when the animated image is WEBP and not GIF
+        //    gifLabel = <p className="mx_MImageBody_gifLabel">GIF</p>;
+        //}
 
         let banner: ReactNode | undefined;
+        // no banner for gifs
         if (this.props.mediaVisible && hoverOrFocus) {
             banner = this.getBanner(content);
         }

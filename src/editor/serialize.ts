@@ -146,7 +146,10 @@ export function htmlSerializeFromMdIfNeeded(md: string, { forceHTML = false } = 
     }
 
     const parser = new Markdown(md);
-    if (!parser.isPlainText() || forceHTML) {
+    const contains_emoji = md.split(" ")
+        .map(x => (! x.includes(" ")) && x.startsWith(":") && x.endsWith(":"))
+        .includes(true);
+    if (!parser.isPlainText() || forceHTML || contains_emoji) {
         // feed Markdown output to HTML parser
         const phtml = new DOMParser().parseFromString(parser.toHTML(), "text/html");
 
@@ -173,7 +176,7 @@ export function htmlSerializeFromMdIfNeeded(md: string, { forceHTML = false } = 
 
         let html: string = phtml.body.innerHTML;
 
-        html = html.slice(0,-1);
+        //html = html.slice(0,-1);
 
         //Trim out the <p> tags that surround text messages
         //These fuck up the display of emojis
@@ -182,9 +185,11 @@ export function htmlSerializeFromMdIfNeeded(md: string, { forceHTML = false } = 
         }
 
         //Now, turn all emoji :blocks: into emojis
-        let chunks = html.split(" ");
+        const chunks = html.split(" ");
+        console.log(`chunks: ${chunks}`)
 
-        for(let i=0; i<chunks.length; i++) {
+        for (let i=0; i<chunks.length; i++) {
+            console.log(`processing chunk: ${chunks[i]}`)
             // If there's a space it's not an emoji block
             // and make sure it starts and ends with a :
             if ((!chunks[i].includes(" ")) && chunks[i].startsWith(":") && chunks[i].endsWith(":")) {

@@ -110,17 +110,17 @@ export default class LinkPreviewWidget extends React.Component<IProps> {
         );
         const needsTooltip = PlatformPeg.get()?.needsUrlTooltips() && this.props.link !== title;
 
-        let maybeEmbed: string = ""
+        let maybeEmbed = null;
         let id: string = ""
+        const params: {[key: string] : string} = {};
 
 
         if (this.props.link.startsWith("https://youtu.be/"))  {
             //Remove beginning of url to get video id
             const tail = this.props.link.slice(17);
-            var part = tail.split("?");
+            const part = tail.split("?");
             if (part.length == 2) {
-                var split=part[1].split("&");
-                var params: {[key: string] : string} = {};
+                const split=part[1].split("&");
                 for (let i=0; i<split.length; i++) {
                     const t=split[i];
                     const result=t.split("=");
@@ -140,13 +140,12 @@ export default class LinkPreviewWidget extends React.Component<IProps> {
         } else if (this.props.link.startsWith("https://www.youtube.com/watch")
                 || this.props.link.startsWith("https://youtube.com/watch")) {
             //Remove beginning of url to get GET parameters
-            var chunk;
+            let chunk;
             if (this.props.link.startsWith("https://www.youtube.com/watch")) {
                 chunk=this.props.link.slice(30);
             } else {
                 chunk=this.props.link.slice(26);
             }
-            var params: {[key: string] : string} = {};
             const split=chunk.split("&");
             for (let i=0; i<split.length; i++) {
                 const t=split[i];
@@ -163,9 +162,17 @@ export default class LinkPreviewWidget extends React.Component<IProps> {
         }
 
         if (id != "") {
-            const url="https://www.youtube.com/embed/" + id
-            maybeEmbed = `<iframe width="560" height="315" src=${url} frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>`
-
+            const url="https://www.youtube.com/embed/" + id;
+            maybeEmbed = (
+                <iframe
+                    width="560"
+                    height="315"
+                    src={url}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    title="Embedded Youtube Video" />
+            );
         }
 
 
